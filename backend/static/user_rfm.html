@@ -1,0 +1,243 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RFM 用户价值分布 · 电商促销评估系统</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
+<style>
+  :root{--bg:#f0f4fa;--surface:#ffffff;--card:#ffffff;--border:#e2e8f0;
+    --accent:#4f8ef7;--accent2:#3ecf8e;--accent3:#f7c948;--accent4:#f87168;
+    --text:#1a2540;--muted:#64748b;
+    --font:'Microsoft YaHei','PingFang SC','微软雅黑',sans-serif;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:#f8faff;color:#1a2540;font-family:var(--font);min-height:100vh;}
+  .topbar{display:flex;align-items:center;justify-content:space-between;
+    padding:0 28px;height:56px;background:rgba(255,255,255,.95);
+    border-bottom:1px solid #e2e8f0;position:sticky;top:0;z-index:100;
+    box-shadow:0 1px 10px rgba(100,120,160,.08);backdrop-filter:blur(12px);}
+  .logo{display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit;}
+  .logo-icon{width:30px;height:30px;background:var(--accent);border-radius:8px;
+    display:flex;align-items:center;justify-content:center;font-size:16px;}
+  .logo-text{font-size:15px;font-weight:700;}
+  .logo-sub{font-size:11px;color:#64748b;margin-top:1px;}
+  .nav{display:flex;gap:4px;}
+  .nav a{padding:6px 14px;border-radius:6px;font-size:13px;font-weight:500;
+    text-decoration:none;color:#64748b;transition:all .2s;}
+  .nav a:hover{color:#1a2540;background:#f1f5fd;}
+  .nav a.active{color:var(--accent);background:rgba(79,142,247,.12);}
+  .topbar-right{display:flex;align-items:center;gap:10px;}
+  .status-dot{width:8px;height:8px;border-radius:50%;background:#666;
+    display:inline-block;margin-right:4px;transition:background .3s;}
+  .status-dot.ok{background:var(--accent2);box-shadow:0 0 6px var(--accent2);}
+  .status-dot.err{background:var(--accent4);}
+  .status-text{font-size:11px;color:#64748b;}
+
+  .main{padding:28px 32px;max-width:1200px;margin:0 auto;}
+  .page-header{margin-bottom:24px;}
+  .page-header h1{font-size:22px;font-weight:700;}
+  .page-header p{font-size:13px;color:#64748b;margin-top:6px;line-height:1.7;}
+  .back-btn{display:inline-flex;align-items:center;gap:6px;font-size:12px;
+    color:#64748b;text-decoration:none;padding:4px 10px;border-radius:6px;
+    border:1px solid var(--border);transition:all .2s;margin-bottom:16px;}
+  .back-btn:hover{color:var(--text);border-color:var(--accent);}
+
+  .chart-card{background:var(--card);border:1px solid var(--border);
+    border-radius:12px;padding:24px;}
+  .chart-title{font-size:15px;font-weight:600;display:flex;align-items:center;gap:8px;}
+  .chart-title .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+  .chart-desc{font-size:12px;color:#64748b;margin-top:6px;line-height:1.7;}
+  .chart-desc .term{color:var(--accent3);font-weight:500;}
+  .insight-row{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;}
+  .insight-tag{font-size:11px;padding:4px 10px;border-radius:6px;font-weight:500;}
+  .insight-tag.blue{background:rgba(79,142,247,.15);color:var(--accent);}
+  .insight-tag.red{background:rgba(248,113,104,.15);color:var(--accent4);}
+
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:20px;}
+
+  .rfm-legend{display:flex;gap:16px;margin-top:14px;flex-wrap:wrap;}
+  .rfm-legend-item{display:flex;align-items:center;gap:6px;font-size:11px;color:#64748b;}
+  .rfm-dot{width:10px;height:10px;border-radius:50%;}
+
+  .footer{margin-top:40px;padding:16px 0;border-top:1px solid var(--border);
+    font-size:11px;color:#64748b;display:flex;justify-content:space-between;}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+  .fade{animation:fadeUp .5s ease both;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="logo" href="/">
+    <div class="logo-icon">📊</div>
+    <div><div class="logo-text">电商促销评估系统</div>
+    <div class="logo-sub">E-Commerce Promotion Analytics</div></div>
+  </a>
+  <nav class="nav">
+    <a href="/">🏠 首页</a>
+    <a href="/user/predict">🔮 转化预测</a>
+    <a href="/user/batch">📤 批量分析</a>
+    <a href="/user/profile">🔍 用户查询</a>
+    <a href="/promo/overview">🎯 KPI总览</a>
+    <a href="/promo/funnel">📉 转化漏斗</a>
+    <a href="/promo/trend">📊 销售趋势</a>
+    <a href="/promo/ate">⚖️ ATE对比</a>
+    <a href="/user/segments">🧩 用户分群</a>
+    <a href="/user/rfm" class="active">💎 RFM分布</a>
+  </nav>
+  <div class="topbar-right">
+    <span class="status-dot" id="statusDot"></span>
+    <span class="status-text" id="statusText">连接中...</span>
+    <span id="topbar-user" style="font-size:12px;color:#64748b;margin-left:6px;"></span>
+    <button onclick="logout()" style="padding:5px 14px;border-radius:6px;
+      border:1px solid #e2e8f0;background:transparent;color:#64748b;
+      font-size:13px;cursor:pointer;font-family:var(--font);">退出登录</button>
+  </div>
+</div>
+
+<div class="main">
+  <a class="back-btn" href="/">← 返回首页</a>
+
+  <div class="page-header fade">
+    <h1>💎 RFM 用户价值三维分布</h1>
+    <p>以最近购买天数（R）为X轴、购买频次（F）为Y轴、消费金额（M）为气泡大小，直观展示用户价值分布。
+      同时展示已购买用户的品类偏好分布。</p>
+  </div>
+
+  <!-- RFM散点图 -->
+  <div class="chart-card fade">
+    <div class="chart-title">
+      <span class="dot" style="background:var(--accent)"></span>RFM 用户价值三维散点图
+    </div>
+    <div class="chart-desc">
+      <span class="term">R（最近购买天数）</span>越小越好；<span class="term">F（购买频次）</span>越大越好；
+      气泡大小代表消费金额（M）。<span style="color:var(--accent)">蓝色</span>=已购买，<span style="color:var(--accent4)">红色</span>=未购买。
+      右上角高频次用户为高价值客户，是精准运营的核心目标。
+    </div>
+    <div id="rfmChart" style="height:420px;margin-top:12px;"></div>
+    <div class="rfm-legend">
+      <div class="rfm-legend-item"><div class="rfm-dot" style="background:rgba(79,142,247,.7)"></div>已购买用户（气泡=消费金额M）</div>
+      <div class="rfm-legend-item"><div class="rfm-dot" style="background:rgba(248,113,104,.5)"></div>未购买用户</div>
+      <div style="font-size:11px;color:#64748b;margin-left:auto;">气泡越大 = 消费金额越高</div>
+    </div>
+  </div>
+
+  <!-- 品类分布 -->
+  <div class="grid2 fade">
+    <div class="chart-card">
+      <div class="chart-title">
+        <span class="dot" style="background:var(--accent3)"></span>购买用户品类偏好分布
+      </div>
+      <div class="chart-desc">
+        展示已购买用户中各商品类别的人数分布，反映不同促销方案对哪些品类吸引力最强。
+      </div>
+      <div id="categoryChart" style="height:280px;margin-top:12px;"></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">
+        <span class="dot" style="background:var(--accent2)"></span>RFM 价值分层说明
+      </div>
+      <div class="chart-desc">根据 RFM 综合得分将用户分为三层，指导差异化运营策略。</div>
+      <div style="margin-top:16px;display:flex;flex-direction:column;gap:12px;">
+        <div style="background:rgba(62,207,142,.08);border:1px solid rgba(62,207,142,.2);border-radius:8px;padding:14px;">
+          <div style="font-size:13px;font-weight:700;color:var(--accent2)">🏆 高价值用户</div>
+          <div style="font-size:11px;color:#64748b;margin-top:4px">近期购买、高频、高消费。优先维护，提供专属优惠和专项服务。</div>
+        </div>
+        <div style="background:rgba(247,201,72,.08);border:1px solid rgba(247,201,72,.2);border-radius:8px;padding:14px;">
+          <div style="font-size:13px;font-weight:700;color:var(--accent3)">💛 中价值用户</div>
+          <div style="font-size:11px;color:#64748b;margin-top:4px">有一定购买记录，但频次或金额不够突出。通过定向促销提升粘性。</div>
+        </div>
+        <div style="background:rgba(248,113,104,.08);border:1px solid rgba(248,113,104,.2);border-radius:8px;padding:14px;">
+          <div style="font-size:13px;font-weight:700;color:var(--accent4)">📉 低价值用户</div>
+          <div style="font-size:11px;color:#64748b;margin-top:4px">长期未购买或消费极少。评估召回成本，低优先级或放弃触达。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <span>数据来源：WA Marketing Campaign · UserBehavior_2025 · 日志行为数据</span>
+    <span>论文：电商促销活动效果评估与用户转化率预测模型评估系统 · 韩颜泽 · 2026</span>
+  </div>
+</div>
+
+<script>
+const API = 'http://localhost:5000/api';
+const C = {accent:'#4f8ef7',accent2:'#3ecf8e',accent3:'#f7c948',accent4:'#f87168',
+           muted:'#64748b',border:'#e2e8f0',text:'#1a2540'};
+const ROLE_LABEL = { admin:'管理员', analyst:'分析师', viewer:'访客' };
+
+fetch('/api/auth/status').then(r=>r.json()).then(res=>{
+  if(!res.data||!res.data.logged_in){location.href='/login';return;}
+  const {username,role}=res.data;
+  document.getElementById('topbar-user').textContent=`👤 ${username} · ${ROLE_LABEL[role]||role}`;
+});
+function logout(){fetch('/api/logout',{method:'POST'}).then(()=>location.href='/login');}
+
+async function apiFetch(url,fallback){
+  try{const res=await fetch(url,{signal:AbortSignal.timeout(5000)});
+    const json=await res.json();if(json.code===0)return json.data;return fallback;
+  }catch{return fallback;}
+}
+
+async function init(){
+  try{
+    const res=await fetch(`${API}/health`,{signal:AbortSignal.timeout(3000)});
+    const d=await res.json();
+    if(d.code===0){
+      document.getElementById('statusDot').className='status-dot ok';
+      document.getElementById('statusText').textContent=`后端已连接 · 模型${d.data.model_loaded?'已加载':'未加载'}`;
+    }
+  }catch{document.getElementById('statusDot').className='status-dot err';document.getElementById('statusText').textContent='后端未连接';}
+
+  const data=await apiFetch(`${API}/user/rfm?n=400`,{points:[],category_dist:{}});
+  const chart=echarts.init(document.getElementById('rfmChart'), null);
+
+  const buyers=data.points.filter(p=>p.converted===1);
+  const nonbuyers=data.points.filter(p=>p.converted===0);
+  chart.setOption({
+    backgroundColor:'transparent',
+    tooltip:{trigger:'item',backgroundColor:'#fff',borderColor:'#e2e8f0',borderWidth:1,textStyle:{color:'#1a2540'},formatter:p=>p.seriesIndex===0
+      ?`<b>已购买用户</b><br/>最近购买：${p.data[0]}天前<br/>购买次数：${p.data[1]}次<br/>消费：¥${p.data[2].toLocaleString()}`
+      :`<b>未购买用户</b><br/>最近浏览：${p.data[0]}天前`},
+    legend:{data:['已购买用户','未购买用户'],textStyle:{color:C.text},bottom:0,itemWidth:12},
+    grid:{left:60,right:20,top:20,bottom:50},
+    xAxis:{type:'value',name:'Recency（距上次购买天数）',nameTextStyle:{color:C.muted,fontSize:10},
+      min:0,max:365,axisLabel:{color:C.muted,fontSize:10},
+      splitLine:{lineStyle:{color:C.border,type:'dashed'}}},
+    yAxis:{type:'value',name:'Frequency（购买次数）',nameTextStyle:{color:C.muted,fontSize:10},
+      min:0,max:5,interval:1,axisLabel:{color:C.muted},
+      splitLine:{lineStyle:{color:C.border,type:'dashed'}}},
+    series:[
+      {name:'已购买用户',type:'scatter',data:buyers.map(p=>[p.r,p.f,p.m,p.score]),
+        symbolSize:d=>Math.max(5,Math.min(20,d[2]/1200)),itemStyle:{color:'rgba(79,142,247,.7)'}},
+      {name:'未购买用户',type:'scatter',data:nonbuyers.map(p=>[p.r,p.f]),
+        symbolSize:5,itemStyle:{color:'rgba(248,113,104,.5)'}}
+    ]
+  });
+  window.addEventListener('resize',()=>chart.resize());
+
+  if(data.category_dist){
+    const catChart=echarts.init(document.getElementById('categoryChart'), null);
+    const cats=Object.keys(data.category_dist);
+    const vals=Object.values(data.category_dist);
+    catChart.setOption({
+      backgroundColor:'transparent',
+      tooltip:{trigger:'axis',backgroundColor:'#fff',borderColor:'#e2e8f0',borderWidth:1,textStyle:{color:'#1a2540'}},
+      grid:{left:90,right:20,top:20,bottom:20},
+      xAxis:{type:'value',axisLabel:{color:C.muted},
+        splitLine:{lineStyle:{color:C.border,type:'dashed'}}},
+      yAxis:{type:'category',data:cats,axisLabel:{color:C.text,fontSize:11}},
+      series:[{type:'bar',data:vals,barWidth:'55%',
+        itemStyle:{color:C.accent2,borderRadius:[0,4,4,0]},
+        label:{show:true,position:'right',color:C.text,fontSize:11,
+               formatter:p=>p.value.toLocaleString()}}]
+    });
+    window.addEventListener('resize',()=>catChart.resize());
+  }
+}
+
+init();
+</script>
+</body>
+</html>

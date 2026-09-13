@@ -1,0 +1,427 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>电商促销活动效果评估系统 · 促销总览</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
+<!-- Google Fonts removed for local performance -->
+<style>
+  :root {
+    --bg:#0d1117; --surface:#161b22; --card:#1c2333; --border:#30363d;
+    --accent:#4f8ef7; --accent2:#3ecf8e; --accent3:#f7c948; --accent4:#f87168;
+    --text:#e6edf3; --muted:#8b949e;
+    --font:'Microsoft YaHei','PingFang SC','微软雅黑',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:#f8faff;color:#1a2540;font-family:var(--font);min-height:100vh;}
+
+  /* 导航 */
+  .topbar{display:flex;align-items:center;justify-content:space-between;
+    padding:0 28px;height:56px;background:var(--surface);
+    border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;}
+  .logo{display:flex;align-items:center;gap:10px;}
+  .logo-icon{width:30px;height:30px;background:var(--accent);border-radius:8px;
+    display:flex;align-items:center;justify-content:center;font-size:16px;}
+  .logo-text{font-size:15px;font-weight:700;}
+  .logo-sub{font-size:11px;color:#64748b;margin-top:1px;}
+  .nav{display:flex;gap:4px;}
+  .nav a{padding:6px 16px;border-radius:6px;font-size:13px;font-weight:500;
+    text-decoration:none;color:#64748b;transition:all .2s;}
+  .nav a:hover{color:var(--text);background:var(--card);}
+  .nav a.active{color:var(--accent);background:rgba(79,142,247,.12);}
+  .status-dot{width:8px;height:8px;border-radius:50%;background:#666;
+    display:inline-block;margin-right:6px;transition:background .3s;}
+  .status-dot.ok{background:var(--accent2);box-shadow:0 0 6px var(--accent2);}
+  .status-dot.err{background:var(--accent4);}
+  .status-text{font-size:11px;color:#64748b;}
+
+  .main{padding:24px 28px;max-width:1400px;margin:0 auto;}
+  .page-header{margin-bottom:20px;}
+  .page-header h1{font-size:20px;font-weight:700;}
+  .page-header p{font-size:13px;color:#64748b;margin-top:4px;}
+  .filters{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;}
+  .filter-btn{padding:5px 14px;border-radius:20px;font-size:12px;font-weight:500;
+    border:1px solid var(--border);background:var(--card);color:#64748b;
+    cursor:pointer;transition:all .2s;font-family:var(--font);}
+  .filter-btn:hover,.filter-btn.active{border-color:var(--accent);color:var(--accent);
+    background:rgba(79,142,247,.1);}
+
+  /* KPI */
+  .kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px;}
+  .kpi-card{background:var(--card);border:1px solid var(--border);border-radius:12px;
+    padding:18px 20px;position:relative;overflow:hidden;animation:fadeUp .5s ease both;}
+  .kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;
+    height:3px;border-radius:12px 12px 0 0;}
+  .kpi-card:nth-child(1)::before{background:var(--accent);}
+  .kpi-card:nth-child(2)::before{background:var(--accent2);}
+  .kpi-card:nth-child(3)::before{background:var(--accent3);}
+  .kpi-card:nth-child(4)::before{background:var(--accent4);}
+  .kpi-label{font-size:11px;color:#64748b;font-weight:500;letter-spacing:.5px;}
+  .kpi-value{font-size:28px;font-weight:700;margin:6px 0 4px;line-height:1;}
+  .kpi-badge{display:inline-flex;align-items:center;gap:3px;font-size:11px;
+    font-weight:600;padding:2px 8px;border-radius:10px;margin-top:4px;}
+  .kpi-badge.up{background:rgba(62,207,142,.15);color:var(--accent2);}
+  .kpi-badge.info{background:rgba(79,142,247,.15);color:var(--accent);}
+  .kpi-tip{font-size:10px;color:#64748b;margin-top:6px;padding-top:6px;
+    border-top:1px solid var(--border);line-height:1.5;}
+  .skeleton{background:linear-gradient(90deg,#eef2f8 25%,#f4f7fd 50%,#eef2f8 75%);
+    background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:4px;
+    height:28px;width:80%;}
+
+  /* 图表卡 */
+  .charts-grid{display:grid;gap:16px;margin-bottom:16px;}
+  .chart-card{background:var(--card);border:1px solid var(--border);
+    border-radius:12px;padding:20px;animation:fadeUp .5s ease both;}
+  .chart-title{font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px;}
+  .chart-title .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+  .chart-desc{font-size:11px;color:#64748b;margin-top:5px;line-height:1.6;}
+  .chart-desc .term{color:var(--accent3);font-weight:500;}
+  .insight-row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;}
+  .insight-tag{font-size:11px;padding:4px 10px;border-radius:6px;font-weight:500;}
+  .insight-tag.blue{background:rgba(79,142,247,.15);color:var(--accent);}
+  .insight-tag.green{background:rgba(62,207,142,.15);color:var(--accent2);}
+  .insight-tag.yellow{background:rgba(247,201,72,.15);color:var(--accent3);}
+  .insight-tag.red{background:rgba(248,113,104,.15);color:var(--accent4);}
+
+  /* 方法对比表 */
+  .method-table{width:100%;border-collapse:collapse;margin-top:8px;font-size:12px;}
+  .method-table th{background:rgba(79,142,247,.1);color:var(--accent);
+    padding:8px 12px;text-align:left;font-weight:600;border-bottom:1px solid var(--border);}
+  .method-table td{padding:8px 12px;border-bottom:1px solid #f0f4fa;
+    color:var(--text);}
+  .method-table tr:hover td{background:rgba(79,142,247,.02);}
+  .sig-badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;}
+  .sig-badge.yes{background:rgba(62,207,142,.15);color:var(--accent2);}
+  .sig-badge.no{background:rgba(255,255,255,.08);color:#64748b;}
+
+  .footer{margin-top:32px;padding:16px 0;border-top:1px solid var(--border);
+    font-size:11px;color:#64748b;display:flex;justify-content:space-between;}
+
+  @keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+  @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo">
+    <div class="logo-icon">📊</div>
+    <div><div class="logo-text">电商促销评估系统</div>
+    <div class="logo-sub">E-Commerce Promotion Analytics</div></div>
+  </div>
+  <nav class="nav">
+    <a href="/">🏠 首页</a>
+    <a href="/promo" class="active">📈 促销效果总览</a>
+    <a href="/user">👥 用户分析</a>
+  </nav>
+  <div style="display:flex;align-items:center;gap:12px;">
+    <span class="status-dot" id="statusDot"></span>
+    <span class="status-text" id="statusText">连接中...</span>
+    <span id="topbar-user" style="font-size:12px;color:#8b949e;"></span>
+    <button onclick="logout()" style="padding:5px 14px;border-radius:6px;
+      border:1px solid #e2e8f0;background:transparent;color:#64748b;
+      font-size:13px;cursor:pointer;">退出登录</button>
+  </div>
+</div>
+
+<div class="main">
+  <div class="page-header">
+    <h1>促销效果总览</h1>
+    <p>汇总所有促销活动的核心指标，展示因果推断与转化漏斗分析结果（数据实时来自后端API）</p>
+    <div class="filters">
+      <button class="filter-btn active" onclick="setFilter(this,'all')">全部活动</button>
+      <button class="filter-btn" onclick="setFilter(this,'1')">方案一（满减）</button>
+      <button class="filter-btn" onclick="setFilter(this,'2')">方案二（折扣）</button>
+      <button class="filter-btn" onclick="setFilter(this,'3')">方案三（优惠券）</button>
+    </div>
+  </div>
+
+  <!-- KPI -->
+  <div class="kpi-row">
+    <div class="kpi-card">
+      <div class="kpi-label">CONVERSION RATE · 整体转化率</div>
+      <div class="kpi-value" id="kpi-conv" style="color:var(--accent)"><div class="skeleton"></div></div>
+      <span class="kpi-badge up">↑ 购买用户/总用户</span>
+      <div class="kpi-tip"><span style="color:var(--accent)">转化率</span>：每100个用户中最终完成购买的人数比例，数值越高说明促销推动力越强。</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">GMV · 用户总消费额</div>
+      <div class="kpi-value" id="kpi-gmv" style="color:var(--accent2)"><div class="skeleton"></div></div>
+      <span class="kpi-badge up">↑ 全体用户累计</span>
+      <div class="kpi-tip"><span style="color:var(--accent2)">GMV（成交总额）</span>：所有用户的累计消费金额，直接反映活动的营收拉动效果。</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">ATT · PSM因果效应</div>
+      <div class="kpi-value" id="kpi-att" style="color:var(--accent3)"><div class="skeleton"></div></div>
+      <span class="kpi-badge info">PSM验证 p=0.033</span>
+      <div class="kpi-tip"><span style="color:var(--accent3)">ATT（平均处理效应）</span>：剔除门店基础差异后，促销真正带来的销售额增量，而非简单前后对比。</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">CATE · Uplift因果效应均值</div>
+      <div class="kpi-value" id="kpi-cate" style="color:var(--accent4)"><div class="skeleton"></div></div>
+      <span class="kpi-badge up">T-Learner预测</span>
+      <div class="kpi-tip"><span style="color:var(--accent4)">CATE（个体因果效应均值）</span>：对每个用户预测"促销对他的影响有多大"，73.2%为全体均值。</div>
+    </div>
+  </div>
+
+  <!-- 漏斗图 + 趋势图 -->
+  <div class="charts-grid" style="grid-template-columns:1fr 1.6fr">
+    <div class="chart-card">
+      <div class="chart-title">
+        <span class="dot" style="background:var(--accent)"></span>点击→加购→购买 转化漏斗
+      </div>
+      <div class="chart-desc">
+        用户从<span class="term">浏览（PV）</span>→<span class="term">收藏（FAV）</span>→<span class="term">购买（BUY）</span>的逐步流失。漏斗层级差距越大说明那一步转化损失越严重。
+      </div>
+      <div id="funnelChart" style="height:300px"></div>
+      <div class="insight-row" id="funnelInsights"></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">
+        <span class="dot" style="background:var(--accent2)"></span>活动期间周度销售额趋势
+      </div>
+      <div class="chart-desc">
+        三种促销方案4周内的销售走势对比。<span class="term">Week1-2为活动前期（基准期）</span>，<span class="term">Week3-4为活动中后期</span>。趋势平稳说明促销效果持续性好。
+      </div>
+      <div id="trendChart" style="height:300px"></div>
+      <div class="insight-row">
+        <span class="insight-tag blue">方案一全程领先</span>
+        <span class="insight-tag red">方案二第4周明显下滑</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ATE对比 + 方法汇总表 -->
+  <div class="charts-grid" style="grid-template-columns:1.1fr 1fr">
+    <div class="chart-card">
+      <div class="chart-title">
+        <span class="dot" style="background:var(--accent3)"></span>各促销方案 ATE 因果效应对比
+      </div>
+      <div class="chart-desc">
+        <span class="term">ATE（Average Treatment Effect）</span>：控制门店规模、年龄等混淆变量后，促销真正带来的额外销售额。与简单均值对比不同，ATE能排除"本来就是好门店"的干扰。
+      </div>
+      <div id="ateChart" style="height:280px"></div>
+      <div class="insight-row">
+        <span class="insight-tag green" id="psmInsight">PSM加载中...</span>
+        <span class="insight-tag yellow">DiD方向一致</span>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">
+        <span class="dot" style="background:var(--accent4)"></span>三种因果推断方法结果汇总
+      </div>
+      <div class="chart-desc">
+        本研究采用 <span class="term">PSM</span>（倾向得分匹配）、<span class="term">DiD</span>（双重差分）、<span class="term">Uplift</span>（提升模型）三种方法交叉验证，三者结论方向一致，增强了结论可信度。
+      </div>
+      <table class="method-table" id="methodTable">
+        <thead><tr><th>方法</th><th>估计量</th><th>p值</th><th>显著性</th></tr></thead>
+        <tbody><tr><td colspan="4" style="color:#64748b;text-align:center">加载中...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="footer">
+    <span>数据来源：WA Marketing Campaign · UserBehavior_2025 · 日志行为数据</span>
+    <span>论文：电商促销活动效果评估与用户转化率预测模型评估系统 · 韩颜泽 · 2026</span>
+  </div>
+</div>
+
+<script>
+const API = 'http://localhost:5000/api';
+const C = { accent:'#4f8ef7',accent2:'#3ecf8e',accent3:'#f7c948',accent4:'#f87168',
+            muted:'#8b949e',border:'#30363d',text:'#e6edf3' };
+
+// ── 连接状态检查 ──────────────────────────────────────────
+async function checkHealth() {
+  try {
+    const res = await fetch(`${API}/health`, { signal: AbortSignal.timeout(3000) });
+    const data = await res.json();
+    if (data.code === 0) {
+      document.getElementById('statusDot').className = 'status-dot ok';
+      document.getElementById('statusText').textContent = `后端已连接 · 模型${data.data.model_loaded ? '已加载' : '未加载'}`;
+    }
+  } catch {
+    document.getElementById('statusDot').className = 'status-dot err';
+    document.getElementById('statusText').textContent = '后端未连接（使用缓存数据）';
+  }
+}
+
+// ── 通用fetch包装，失败时回退到备用数据 ──────────────────
+async function apiFetch(url, fallback) {
+  try {
+    const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
+    const json = await res.json();
+    if (json.code === 0) return json.data;
+    return fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+// ── KPI 卡片 ──────────────────────────────────────────────
+async function loadKPI() {
+  const data = await apiFetch(`${API}/promo/overview`, {
+    conversion_rate: 70.4, gmv_wan: 5318, att_k: 7.55, cate_pct: 73.2
+  });
+  document.getElementById('kpi-conv').textContent = `${data.conversion_rate}%`;
+  document.getElementById('kpi-gmv').textContent  = `¥${data.gmv_wan}万`;
+  document.getElementById('kpi-att').textContent  = `+${data.att_k}K`;
+  document.getElementById('kpi-cate').textContent = `${data.cate_pct}%`;
+}
+
+// ── 漏斗图 ───────────────────────────────────────────────
+async function loadFunnel() {
+  const data = await apiFetch(`${API}/user/funnel`, {
+    funnel: [
+      {name:'全部用户',value:67000,pct:100},
+      {name:'浏览用户(PV)',value:14023,pct:20.9},
+      {name:'收藏用户(FAV)',value:7023,pct:10.5},
+      {name:'购买用户(BUY)',value:47138,pct:70.4},
+    ]
+  });
+  const chart = echarts.init(document.getElementById('funnelChart'), null);
+  const colors = ['#334155', C.accent, C.accent3, C.accent2];
+  chart.setOption({
+    backgroundColor: 'transparent',
+    tooltip: { trigger:'item', backgroundColor:'#fff',borderColor:'#e2e8f0',borderWidth:1,textStyle:{color:'#1a2540'}, formatter: p => `${p.name}<br/>用户数：${p.value.toLocaleString()}人<br/>占比：${data.funnel[p.dataIndex]?.pct}%` },
+    series: [{
+      type: 'funnel', left:'8%', width:'84%', top:20, bottom:20,
+      sort: 'none', gap: 4,
+      label: { show:true, position:'inside', fontSize:12, fontWeight:'bold',
+               formatter: p => `${p.name}\n${(p.value/1000).toFixed(0)}K人` },
+      itemStyle: { borderWidth: 0 },
+      data: data.funnel.map((f,i) => ({
+        value: f.value, name: f.name, itemStyle: { color: colors[i] }
+      }))
+    }]
+  });
+
+  const insights = document.getElementById('funnelInsights');
+  const pct = data.funnel[3]?.pct || 70.4;
+  insights.innerHTML = `
+    <span class="insight-tag yellow">浏览→购买流失率 ${(100-data.funnel[1]?.pct).toFixed(1)}%</span>
+    <span class="insight-tag green">最终购买率 ${pct}%</span>`;
+
+  window.addEventListener('resize', () => chart.resize());
+}
+
+// ── 趋势图 ───────────────────────────────────────────────
+let trendChart;
+async function loadTrend(promo = 'all') {
+  const data = await apiFetch(`${API}/promo/trend?promo=${promo}`, {
+    weeks: ['第1周(活动前)','第2周(活动前)','第3周(活动中)','第4周(活动中)'],
+    series: [
+      {name:'方案一（满减）',color:C.accent, data:[58.24,56.93,58.77,58.45]},
+      {name:'方案二（折扣）',color:C.accent4,data:[47.73,47.58,47.72,46.28]},
+      {name:'方案三（优惠券）',color:C.accent3,data:[55.78,55.95,54.38,55.35]},
+    ]
+  });
+  if (!trendChart) trendChart = echarts.init(document.getElementById('trendChart'), null);
+  trendChart.setOption({
+    backgroundColor:'transparent',
+    tooltip:{ trigger:'axis', backgroundColor:'#fff',borderColor:'#e2e8f0',borderWidth:1,textStyle:{color:'#1a2540'}, axisPointer:{type:'cross'} },
+    legend:{ data:data.series.map(s=>s.name), textStyle:{color:C.text}, bottom:0, itemWidth:14 },
+    grid:{ left:50,right:20,top:20,bottom:50 },
+    xAxis:{ type:'category', data:data.weeks,
+      axisLine:{lineStyle:{color:C.border}}, axisLabel:{color:C.muted,fontSize:10} },
+    yAxis:{ type:'value', min:40, axisLabel:{color:C.muted,formatter:v=>`${v}K`},
+      splitLine:{lineStyle:{color:C.border,type:'dashed'}} },
+    series: data.series.map(s => ({
+      name: s.name, type:'line', smooth:true, symbol:'circle', symbolSize:8,
+      data: s.data,
+      lineStyle:{ color:s.color, width:3 },
+      itemStyle:{ color:s.color },
+      areaStyle: s.name.includes('一') ? {
+        color:{type:'linear',x:0,y:0,x2:0,y2:1,
+          colorStops:[{offset:0,color:'rgba(79,142,247,.2)'},{offset:1,color:'rgba(79,142,247,0)'}]}
+      } : undefined
+    }))
+  });
+  window.addEventListener('resize', () => trendChart.resize());
+}
+
+// ── ATE对比图 + 方法汇总表 ───────────────────────────────
+async function loadATE() {
+  const data = await apiFetch(`${API}/promo/ate`, {
+    methods: [
+      {name:'PSM',estimate:7.55,unit:'K$',p_value:0.033,significant:true,desc:''},
+      {name:'DiD',estimate:1.68,unit:'K$',p_value:0.48,significant:false,desc:''},
+      {name:'Uplift CATE',estimate:73.2,unit:'%',p_value:0.001,significant:true,desc:''},
+    ]
+  });
+
+  // ATE柱状图
+  const ateChart = echarts.init(document.getElementById('ateChart'), null);
+  const ateNames = data.methods.map(m => m.name);
+  const ateVals  = data.methods.map(m => m.estimate);
+  const ateColors= data.methods.map(m => m.significant ? C.accent2 : '#555');
+  ateChart.setOption({
+    backgroundColor:'transparent',
+    tooltip:{ trigger:'axis', backgroundColor:'#fff',borderColor:'#e2e8f0',borderWidth:1,textStyle:{color:'#1a2540'}, formatter: p => {
+      const m = data.methods[p[0].dataIndex];
+      return `<b>${m.name}</b><br/>估计量：${m.estimate}${m.unit}<br/>p值：${m.p_value}<br/>${m.desc}`;
+    }},
+    grid:{ left:40,right:20,top:20,bottom:40 },
+    xAxis:{ type:'category', data:ateNames,
+      axisLabel:{color:C.muted,fontSize:11}, axisLine:{lineStyle:{color:C.border}} },
+    yAxis:{ type:'value', axisLabel:{color:C.muted},
+      splitLine:{lineStyle:{color:C.border,type:'dashed'}} },
+    series:[{ type:'bar', barWidth:'45%',
+      data: ateVals.map((v,i) => ({
+        value: v,
+        itemStyle: { color:ateColors[i], borderRadius:[4,4,0,0] }
+      })),
+      label:{ show:true, position:'top', color:C.text, fontSize:11, fontWeight:'bold',
+              formatter: p => `${p.value}${data.methods[p.dataIndex].unit}\n${data.methods[p.dataIndex].significant?'✓ 显著':'ns'}` }
+    }]
+  });
+
+  // PSI badge更新
+  document.getElementById('psmInsight').textContent = `PSM ATT = +${data.methods[0]?.estimate}K/店/周 (p=0.033)`;
+
+  // 方法汇总表
+  const tbody = document.getElementById('methodTable').querySelector('tbody');
+  tbody.innerHTML = data.methods.map(m => `
+    <tr>
+      <td>${m.name}</td>
+      <td style="color:${m.significant?C.accent2:C.text};font-weight:600">${m.estimate}${m.unit}</td>
+      <td>${m.p_value}</td>
+      <td><span class="sig-badge ${m.significant?'yes':'no'}">${m.significant?'** 显著':'不显著'}</span></td>
+    </tr>
+  `).join('');
+
+  window.addEventListener('resize', () => ateChart.resize());
+}
+
+// ── 筛选器 ───────────────────────────────────────────────
+function setFilter(btn, type) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  loadTrend(type);
+}
+
+// ── 初始化 ───────────────────────────────────────────────
+(async () => {
+  await checkHealth();
+  await Promise.all([loadKPI(), loadFunnel(), loadTrend(), loadATE()]);
+})();
+
+// 退出登录
+function logout() {
+  fetch('/api/logout', {method:'POST'}).then(() => location.href = '/login');
+}
+
+// 检查登录状态，未登录跳转
+const ROLE_LABEL_P = { admin:'管理员', analyst:'分析师', viewer:'访客' };
+fetch('/api/auth/status').then(r=>r.json()).then(res=>{
+  if(!res.data || !res.data.logged_in) location.href='/login';
+  else {
+    const { username, role } = res.data;
+    const label = ROLE_LABEL_P[role] || role;
+    document.getElementById('topbar-user').textContent = `👤 ${username} · ${label}`;
+  }
+});
+</script>
+</body>
+</html>

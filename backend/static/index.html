@@ -1,0 +1,1087 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>电商促销活动效果评估系统</title>
+<style>
+  :root {
+    --bg:#0f1b2d; --surface:#152338; --card:#1a2d47; --card2:#1f3452;
+    --border:#243d5c; --border2:#2e4f73;
+    --accent:#4f8ef7; --accent2:#3ecf8e; --accent3:#f7c948; --accent4:#f87168;
+    --purple:#a78bfa; --cyan:#22d3ee; --pink:#f472b6;
+    --text:#e2e8f0; --muted:#8892a4; --muted2:#5a6478;
+    --font:'Microsoft YaHei','PingFang SC','微软雅黑',sans-serif;
+    --radius:16px; --radius-sm:10px;
+    --shadow:0 4px 24px rgba(0,0,0,.45);
+    --shadow-hover:0 16px 48px rgba(0,0,0,.6);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{height:100%;}
+  body{
+    background:#f0f4fa;
+    background-image:none;
+    color:#1a2540;font-family:var(--font);min-height:100vh;overflow-x:hidden;
+  }
+
+  /* ══════════════════════════════════════════════
+     欢迎落地页 (landing) — 浅色主题
+  ══════════════════════════════════════════════ */
+  #landing{
+    position:fixed;inset:0;z-index:200;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    background:linear-gradient(160deg, #eef3fb 0%, #f4f7fd 40%, #edf2fb 70%, #f0f4fa 100%);
+    transition:opacity .9s ease, visibility .9s ease;
+  }
+  #landing.hidden{opacity:0;visibility:hidden;pointer-events:none;}
+
+  /* 落地页网格背景（浅色版） */
+  #landing::before{
+    content:'';position:absolute;inset:0;
+    background-image:
+      linear-gradient(rgba(79,142,247,.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(79,142,247,.06) 1px, transparent 1px);
+    background-size:60px 60px;
+    mask-image:radial-gradient(ellipse 80% 80% at 50% 50%, black 20%, transparent 80%);
+    -webkit-mask-image:radial-gradient(ellipse 80% 80% at 50% 50%, black 20%, transparent 80%);
+    pointer-events:none;
+  }
+  /* 落地页柔和光晕（浅色版） */
+  #landing::after{
+    content:'';position:absolute;inset:0;pointer-events:none;
+    background:
+      radial-gradient(ellipse 60% 55% at 30% 45%, rgba(79,142,247,.07) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 45% at 75% 55%, rgba(167,139,250,.06) 0%, transparent 55%),
+      radial-gradient(ellipse 40% 35% at 55% 80%, rgba(34,211,238,.04) 0%, transparent 50%);
+  }
+
+  .landing-inner{
+    position:relative;z-index:1;
+    display:flex;flex-direction:column;align-items:center;
+    text-align:center;gap:0;
+    animation:landingFadeIn .8s ease both;
+  }
+  @keyframes landingFadeIn{from{opacity:0;transform:translateY(30px);}to{opacity:1;transform:translateY(0);}}
+
+  .landing-badge{
+    display:inline-flex;align-items:center;gap:8px;
+    padding:6px 16px;border-radius:24px;
+    background:rgba(79,142,247,.08);border:1px solid rgba(79,142,247,.2);
+    font-size:12px;color:#3a7de8;font-weight:600;
+    letter-spacing:.4px;margin-bottom:36px;
+    animation:landingFadeIn .8s .1s ease both;opacity:0;animation-fill-mode:forwards;
+  }
+  .landing-badge-dot{
+    width:7px;height:7px;border-radius:50%;background:#4f8ef7;
+    animation:pulse 2s infinite;
+  }
+
+  .landing-logo{
+    width:72px;height:72px;
+    background:linear-gradient(135deg,#4f8ef7 0%,#a78bfa 100%);
+    border-radius:20px;display:flex;align-items:center;justify-content:center;
+    font-size:34px;margin-bottom:32px;
+    box-shadow:0 8px 32px rgba(79,142,247,.25), 0 2px 12px rgba(79,142,247,.12);
+    animation:landingFadeIn .8s .05s ease both;opacity:0;animation-fill-mode:forwards;
+  }
+
+  .landing-title{
+    font-size:52px;font-weight:900;line-height:1.12;letter-spacing:-1.5px;
+    margin-bottom:12px;
+    background:linear-gradient(135deg,#1a2540 0%,#3a4d6e 100%);
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+    animation:landingFadeIn .8s .15s ease both;opacity:0;animation-fill-mode:forwards;
+  }
+  .landing-title span{
+    background:linear-gradient(135deg,#4f8ef7,#a78bfa);
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  }
+
+  .landing-subtitle{
+    font-size:15px;color:#64748b;line-height:1.7;max-width:520px;
+    margin-bottom:16px;
+    animation:landingFadeIn .8s .22s ease both;opacity:0;animation-fill-mode:forwards;
+  }
+
+  .landing-chips{
+    display:flex;gap:10px;flex-wrap:wrap;justify-content:center;
+    margin-bottom:52px;
+    animation:landingFadeIn .8s .28s ease both;opacity:0;animation-fill-mode:forwards;
+  }
+  .landing-chip{
+    display:flex;align-items:center;gap:6px;
+    padding:6px 14px;border-radius:10px;
+    background:#ffffff;border:1px solid #dde5f4;
+    font-size:11px;color:#64748b;font-weight:500;
+    box-shadow:0 1px 4px rgba(100,120,160,.08);
+  }
+  .landing-chip-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+
+  /* 进入按钮 */
+  .landing-enter{
+    display:flex;align-items:center;gap:12px;
+    padding:18px 48px;border-radius:16px;
+    background:linear-gradient(135deg,#4f8ef7 0%,#a78bfa 100%);
+    color:#fff;font-size:16px;font-weight:700;letter-spacing:.3px;
+    border:none;cursor:pointer;font-family:var(--font);
+    box-shadow:0 8px 28px rgba(79,142,247,.35), 0 2px 8px rgba(79,142,247,.15);
+    transition:all .3s cubic-bezier(.4,0,.2,1);
+    animation:landingFadeIn .8s .35s ease both;opacity:0;animation-fill-mode:forwards;
+    text-decoration:none;position:relative;overflow:hidden;
+  }
+  .landing-enter::before{
+    content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;
+    background:linear-gradient(45deg,transparent 30%,rgba(255,255,255,.15) 50%,transparent 70%);
+    transform:translateX(-100%);transition:transform .6s;
+  }
+  .landing-enter:hover::before{transform:translateX(100%);}
+  .landing-enter:hover{
+    transform:translateY(-3px);
+    box-shadow:0 16px 44px rgba(79,142,247,.4), 0 4px 16px rgba(79,142,247,.2);
+  }
+  .landing-enter:active{transform:translateY(-1px);}
+  .enter-arrow{font-size:20px;transition:transform .3s;}
+  .landing-enter:hover .enter-arrow{transform:translateX(4px);}
+
+  /* 落地页底部统计 */
+  .landing-stats{
+    display:flex;gap:40px;margin-top:60px;
+    animation:landingFadeIn .8s .42s ease both;opacity:0;animation-fill-mode:forwards;
+  }
+  .landing-stat{text-align:center;}
+  .landing-stat-val{font-size:22px;font-weight:800;line-height:1;color:#1a2540;}
+  .landing-stat-lab{font-size:11px;color:#64748b;margin-top:4px;}
+
+  /* ══════════════════════════════════════════════
+     主应用（主功能页）— 白色主题
+  ══════════════════════════════════════════════ */
+  #app{
+    opacity:0;visibility:hidden;
+    transition:opacity .9s ease, visibility .9s ease;
+    /* 白色主题变量覆盖 */
+    --bg:#f0f4fa;
+    --surface:#ffffff;
+    --card:#ffffff;
+    --card2:#f8faff;
+    --border:#e2e8f0;
+    --border2:#d0d9e8;
+    --text:#1a2540;
+    --muted:#64748b;
+    --muted2:#94a3b8;
+    --shadow:0 2px 16px rgba(100,120,160,.10);
+    --shadow-hover:0 12px 40px rgba(100,120,160,.18);
+    background:#f0f4fa;
+    background-image:none;
+    color:#1a2540;
+  }
+  #app.visible{opacity:1;visibility:visible;}
+
+  /* ── 顶栏 ─────────────────────────────────────────────── */
+  .topbar{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:0 40px;height:62px;
+    background:rgba(255,255,255,.92);
+    border-bottom:1px solid #e2e8f0;
+    position:sticky;top:0;z-index:100;
+    backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+    box-shadow:0 1px 12px rgba(100,120,160,.08);
+  }
+  .logo{display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit;}
+  .logo-icon{
+    width:36px;height:36px;
+    background:linear-gradient(135deg,#4f8ef7 0%,#a78bfa 100%);
+    border-radius:10px;display:flex;align-items:center;justify-content:center;
+    font-size:17px;flex-shrink:0;
+    box-shadow:0 0 16px rgba(79,142,247,.25);
+  }
+  .logo-text{font-size:15px;font-weight:700;letter-spacing:.3px;color:#1a2540;}
+  .logo-sub{font-size:10px;color:#64748b;margin-top:1px;font-weight:400;letter-spacing:.5px;}
+  /* ── 导航菜单 ──── */
+  .nav{display:flex;align-items:center;gap:4px;flex:1;justify-content:center;flex-wrap:nowrap;}
+  .nav a{
+    display:flex;align-items:center;gap:5px;
+    padding:6px 13px;border-radius:7px;
+    font-size:12.5px;font-weight:500;
+    text-decoration:none;color:#64748b;
+    white-space:nowrap;
+    transition:all .2s;
+  }
+  .nav a:hover{color:#1a2540;background:#f1f5fd;}
+  .nav a.active{color:#4f8ef7;background:rgba(79,142,247,.12);}
+  .topbar-right{display:flex;align-items:center;gap:10px;}
+  .btn-logout{
+    padding:6px 14px;border-radius:8px;border:1px solid #dde5f4;
+    background:transparent;color:#64748b;font-size:12px;cursor:pointer;
+    font-family:var(--font);transition:all .2s;
+  }
+  .btn-logout:hover{border-color:var(--accent4);color:var(--accent4);background:rgba(248,113,104,.06);}
+  .user-badge{
+    display:flex;align-items:center;gap:7px;
+    padding:5px 12px;border-radius:20px;
+    background:rgba(79,142,247,.08);border:1px solid rgba(79,142,247,.2);
+    font-size:12px;color:var(--accent);
+  }
+  .role-badge{
+    padding:2px 9px;border-radius:10px;font-size:10px;font-weight:700;
+    display:inline-flex;align-items:center;gap:4px;margin-left:2px;
+  }
+  .role-admin  {background:rgba(248,113,104,.12);color:#e05a52;border:1px solid rgba(248,113,104,.22);}
+  .role-analyst{background:rgba(79,142,247,.12); color:#3a7de8;border:1px solid rgba(79,142,247,.22);}
+  .role-viewer {background:rgba(100,116,139,.1);color:#64748b;border:1px solid rgba(100,116,139,.18);}
+
+  /* ── Hero ─────────────────────────────────────────────── */
+  .hero{
+    position:relative;padding:80px 40px 60px;
+    overflow:hidden;
+    background:
+      radial-gradient(ellipse 70% 60% at 20% 50%, rgba(79,142,247,.1) 0%, transparent 65%),
+      radial-gradient(ellipse 50% 50% at 80% 30%, rgba(167,139,250,.08) 0%, transparent 60%),
+      radial-gradient(ellipse 40% 40% at 60% 80%, rgba(34,211,238,.06) 0%, transparent 55%);
+  }
+  .hero::before{
+    content:'';position:absolute;inset:0;
+    background-image:
+      linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+    background-size:48px 48px;
+    mask-image:radial-gradient(ellipse 80% 100% at 50% 0%, black 40%, transparent 100%);
+    -webkit-mask-image:radial-gradient(ellipse 80% 100% at 50% 0%, black 40%, transparent 100%);
+  }
+  .hero-inner{max-width:1120px;margin:0 auto;display:grid;grid-template-columns:1fr auto;gap:60px;align-items:center;}
+  .hero-left{}
+  .hero-badge{
+    display:inline-flex;align-items:center;gap:7px;
+    padding:5px 14px;border-radius:20px;
+    background:rgba(79,142,247,.12);border:1px solid rgba(79,142,247,.25);
+    font-size:11px;color:var(--accent);font-weight:600;margin-bottom:20px;
+    letter-spacing:.3px;
+  }
+  .hero-badge-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);animation:pulse 2s infinite;}
+  @keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.5;transform:scale(.8);}}
+  .hero h1{
+    font-size:40px;font-weight:800;line-height:1.18;letter-spacing:-.8px;
+    margin-bottom:16px;
+    background:linear-gradient(135deg,#e2e8f0 0%,#94a3b8 100%);
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  }
+  .hero h1 span{
+    background:linear-gradient(135deg,#4f8ef7,#a78bfa);
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  }
+  .hero-desc{font-size:14px;color:var(--muted);line-height:1.75;max-width:500px;margin-bottom:32px;}
+  .hero-chips{display:flex;gap:8px;flex-wrap:wrap;}
+  .hero-chip{
+    display:flex;align-items:center;gap:5px;
+    padding:5px 12px;border-radius:8px;
+    background:#f1f5fd;border:1px solid #dde5f4;
+    font-size:11px;color:#64748b;font-weight:500;
+  }
+  .hero-chip-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+
+  /* 统计卡组 */
+  .hero-stats{display:flex;flex-direction:column;gap:12px;flex-shrink:0;}
+  .stat-card{
+    background:var(--card);border:1px solid var(--border);
+    border-radius:var(--radius-sm);padding:16px 24px;
+    min-width:160px;position:relative;overflow:hidden;
+  }
+  .stat-card::before{
+    content:'';position:absolute;top:0;left:0;right:0;height:2px;
+    border-radius:var(--radius-sm) var(--radius-sm) 0 0;
+  }
+  .stat-card.s-blue::before{background:linear-gradient(90deg,var(--accent),transparent);}
+  .stat-card.s-green::before{background:linear-gradient(90deg,var(--accent2),transparent);}
+  .stat-card.s-yellow::before{background:linear-gradient(90deg,var(--accent3),transparent);}
+  .stat-card.s-purple::before{background:linear-gradient(90deg,var(--purple),transparent);}
+  .stat-val{font-size:26px;font-weight:800;line-height:1;margin-bottom:5px;}
+  .stat-card.s-blue .stat-val{color:var(--accent);}
+  .stat-card.s-green .stat-val{color:var(--accent2);}
+  .stat-card.s-yellow .stat-val{color:var(--accent3);}
+  .stat-card.s-purple .stat-val{color:var(--purple);}
+  .stat-lab{font-size:11px;color:var(--muted);font-weight:500;}
+
+  /* ── 主内容 ────────────────────────────────────────────── */
+  .main{max-width:1120px;margin:0 auto;padding:48px 40px 80px;}
+
+  /* ── Section ────────────────────────────────────────────── */
+  .section{margin-bottom:52px;}
+  .section-header{
+    display:flex;align-items:center;gap:14px;
+    margin-bottom:22px;
+  }
+  .section-stripe{
+    width:4px;height:36px;border-radius:4px;flex-shrink:0;
+  }
+  .section-title-group{flex:1;}
+  .section-header h2{font-size:17px;font-weight:700;line-height:1;color:#1a2540;}
+  .section-header p{font-size:11px;color:#64748b;margin-top:4px;}
+  .section-count{
+    padding:4px 12px;border-radius:20px;
+    font-size:11px;font-weight:600;flex-shrink:0;
+  }
+
+  /* ── 卡片网格 ─────────────────────────────────────────── */
+  .cards-grid{display:grid;gap:16px;}
+  .cards-grid.col4{grid-template-columns:repeat(4,1fr);}
+  .cards-grid.col3{grid-template-columns:repeat(3,1fr);}
+  .cards-grid.col2{grid-template-columns:repeat(2,1fr);}
+  .cards-grid.col1{grid-template-columns:1fr;}
+
+  /* ── 功能卡片 ─────────────────────────────────────────── */
+  .fn-card{
+    background:#ffffff;
+    border:1px solid #e2e8f0;
+    border-radius:var(--radius);
+    padding:24px;
+    cursor:pointer;text-decoration:none;color:#1a2540;
+    transition:all .28s cubic-bezier(.4,0,.2,1);
+    display:block;position:relative;overflow:hidden;
+    box-shadow:0 2px 10px rgba(100,120,160,.07);
+  }
+  .fn-card::after{
+    content:'';position:absolute;top:0;left:0;right:0;
+    height:50%;border-radius:var(--radius) var(--radius) 0 0;
+    background:linear-gradient(180deg,rgba(255,255,255,.6) 0%,transparent 100%);
+    pointer-events:none;
+  }
+  .fn-card::before{
+    content:'';position:absolute;top:0;left:0;right:0;height:2px;
+    border-radius:var(--radius) var(--radius) 0 0;
+    opacity:0;transition:opacity .25s;
+  }
+  .fn-card:hover{
+    transform:translateY(-5px);
+    border-color:var(--hc,var(--accent));
+    box-shadow:0 16px 40px rgba(100,120,160,.18), 0 0 0 1px var(--hc,var(--accent)) inset;
+    background:#f8faff;
+  }
+  .fn-card:hover::before{opacity:1;}
+
+  /* 图标区 */
+  .card-icon{
+    width:44px;height:44px;border-radius:12px;
+    display:flex;align-items:center;justify-content:center;
+    font-size:22px;margin-bottom:16px;flex-shrink:0;
+  }
+  .card-title{font-size:14px;font-weight:700;margin-bottom:8px;line-height:1.3;color:#1a2540;}
+  .card-desc{font-size:11px;color:#64748b;line-height:1.65;}
+  .card-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:14px;}
+  .tag{padding:3px 9px;border-radius:8px;font-size:10px;font-weight:600;}
+
+  /* 智能预测首行大卡 — 横向排列 */
+  .fn-card.featured-top{
+    display:grid;
+    grid-template-columns:56px 1fr;
+    column-gap:20px;
+    align-items:start;
+  }
+  .fn-card.featured-top .card-icon{
+    width:56px;height:56px;font-size:26px;
+    margin-bottom:0;grid-row:1/4;
+  }
+  .fn-card.featured-top .card-title{font-size:15px;font-weight:800;}
+  .fn-card.featured-top .card-desc{font-size:12px;}
+
+  /* 箭头 */
+  .card-arrow{
+    position:absolute;right:18px;bottom:18px;
+    width:28px;height:28px;border-radius:8px;
+    display:flex;align-items:center;justify-content:center;
+    font-size:13px;opacity:0;transition:all .25s;
+    background:rgba(79,142,247,.08);border:1px solid #dde5f4;color:#4f8ef7;
+  }
+  .fn-card:hover .card-arrow{opacity:1;}
+
+  /* 权限锁 */
+  .fn-card.no-perm{opacity:.35;cursor:not-allowed;pointer-events:none;filter:grayscale(.5);}
+  .lock-tip{font-size:10px;color:#e05a52;margin-top:10px;display:none;}
+  .fn-card.no-perm .lock-tip{display:block;}
+
+  /* ── 颜色系统 ─────────────────────────────────────────── */
+  .c-blue  {--hc:#4f8ef7;}
+  .c-blue  .card-icon{background:rgba(79,142,247,.1);color:#3a7de8;}
+  .c-blue  .tag-accent{background:rgba(79,142,247,.1);color:#3a7de8;}
+  .c-blue::before{background:linear-gradient(90deg,var(--accent),transparent);}
+
+  .c-green {--hc:#3ecf8e;}
+  .c-green .card-icon{background:rgba(62,207,142,.1);color:#25a870;}
+  .c-green .tag-accent{background:rgba(62,207,142,.1);color:#25a870;}
+  .c-green::before{background:linear-gradient(90deg,var(--accent2),transparent);}
+
+  .c-yellow{--hc:#f7c948;}
+  .c-yellow .card-icon{background:rgba(247,201,72,.1);color:#c99a10;}
+  .c-yellow .tag-accent{background:rgba(247,201,72,.12);color:#c99a10;}
+  .c-yellow::before{background:linear-gradient(90deg,var(--accent3),transparent);}
+
+  .c-red   {--hc:#f87168;}
+  .c-red   .card-icon{background:rgba(248,113,104,.1);color:#e05a52;}
+  .c-red   .tag-accent{background:rgba(248,113,104,.1);color:#e05a52;}
+  .c-red::before{background:linear-gradient(90deg,var(--accent4),transparent);}
+
+  .c-purple{--hc:#a78bfa;}
+  .c-purple .card-icon{background:rgba(167,139,250,.1);color:#8b6ef0;}
+  .c-purple .tag-accent{background:rgba(167,139,250,.1);color:#8b6ef0;}
+  .c-purple::before{background:linear-gradient(90deg,var(--purple),transparent);}
+
+  .c-cyan  {--hc:#22d3ee;}
+  .c-cyan  .card-icon{background:rgba(34,211,238,.1);color:#0ea5ba;}
+  .c-cyan  .tag-accent{background:rgba(34,211,238,.1);color:#0ea5ba;}
+  .c-cyan::before{background:linear-gradient(90deg,var(--cyan),transparent);}
+
+  /* ── 页脚 ─────────────────────────────────────────────── */
+  .footer{
+    border-top:1px solid #e2e8f0;padding:22px 40px;
+    font-size:11px;color:#94a3b8;background:#f8faff;
+    display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;
+  }
+
+  /* ── 动画（主功能页入场） ──────────────────────────────── */
+  @keyframes fadeUp{from{opacity:0;transform:translateY(24px);}to{opacity:1;transform:translateY(0);}}
+  #app.visible .hero{animation:fadeUp .55s .05s ease both;opacity:0;animation-fill-mode:forwards;}
+  #app.visible .section{animation:fadeUp .55s ease both;opacity:0;animation-fill-mode:forwards;}
+  #app.visible .section:nth-child(1){animation-delay:.18s;}
+  #app.visible .section:nth-child(2){animation-delay:.28s;}
+  #app.visible .section:nth-child(3){animation-delay:.38s;}
+
+  /* 进入主应用后 body 切换到白色背景 */
+  body.app-mode{
+    background:#f0f4fa !important;
+    background-image:none !important;
+    transition:background .9s ease;
+  }
+
+  /* ── 响应式 ───────────────────────────────────────────── */
+  @media(max-width:960px){
+    .hero-inner{grid-template-columns:1fr;gap:36px;}
+    .hero-stats{flex-direction:row;flex-wrap:wrap;}
+    .stat-card{min-width:140px;flex:1;}
+    .cards-grid.col4{grid-template-columns:repeat(2,1fr);}
+    .cards-grid.col3{grid-template-columns:repeat(2,1fr);}
+    .hero h1{font-size:30px;}
+    .landing-title{font-size:36px;}
+    .landing-stats{gap:24px;}
+  }
+  @media(max-width:600px){
+    .cards-grid.col4,.cards-grid.col3,.cards-grid.col2{grid-template-columns:1fr;}
+    .topbar,.main,.hero{padding-left:20px;padding-right:20px;}
+    .hero{padding-top:52px;}
+    .hero h1{font-size:24px;}
+    .footer{padding:16px 20px;}
+    .landing-title{font-size:28px;}
+    .landing-enter{padding:14px 32px;font-size:14px;}
+    .landing-stats{flex-wrap:wrap;gap:20px;}
+  }
+
+  /* ── 账号管理按钮 ─────────────────────────────────────── */
+  .btn-admin{
+    padding:6px 14px;border-radius:8px;
+    background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.3);
+    color:#8b6ef0;font-size:12px;cursor:pointer;font-family:var(--font);
+    font-weight:600;transition:all .2s;
+  }
+  .btn-admin:hover{background:rgba(167,139,250,.2);border-color:rgba(167,139,250,.5);}
+
+  /* ── 账号管理弹窗 ─────────────────────────────────────── */
+  .admin-overlay{
+    position:fixed;inset:0;z-index:1000;
+    background:rgba(15,27,45,.45);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
+    display:flex;align-items:center;justify-content:center;
+    opacity:0;visibility:hidden;transition:all .25s;
+  }
+  .admin-overlay.open{opacity:1;visibility:visible;}
+  .admin-panel{
+    background:#fff;border-radius:18px;
+    width:min(720px,92vw);max-height:80vh;
+    display:flex;flex-direction:column;
+    box-shadow:0 24px 64px rgba(0,0,0,.18),0 4px 16px rgba(0,0,0,.1);
+    transform:translateY(20px) scale(.97);transition:all .25s;overflow:hidden;
+  }
+  .admin-overlay.open .admin-panel{transform:none;}
+  .admin-panel-head{
+    padding:20px 24px 16px;border-bottom:1px solid #e2e8f0;
+    display:flex;align-items:center;justify-content:space-between;flex-shrink:0;
+  }
+  .admin-panel-title{font-size:16px;font-weight:800;color:#1a2540;display:flex;align-items:center;gap:8px;}
+  .admin-panel-close{
+    width:32px;height:32px;border-radius:8px;border:1px solid #e2e8f0;
+    background:transparent;cursor:pointer;font-size:16px;color:#94a3b8;
+    display:flex;align-items:center;justify-content:center;transition:all .2s;
+  }
+  .admin-panel-close:hover{background:#f1f5fd;color:#1a2540;}
+  .admin-panel-body{padding:20px 24px;overflow-y:auto;flex:1;}
+  .admin-table{width:100%;border-collapse:collapse;}
+  .admin-table th{
+    text-align:left;font-size:11px;font-weight:700;color:#94a3b8;
+    padding:6px 10px;border-bottom:2px solid #e2e8f0;letter-spacing:.4px;
+    text-transform:uppercase;
+  }
+  .admin-table td{
+    padding:10px 10px;border-bottom:1px solid #f1f5fd;
+    font-size:13px;color:#1a2540;vertical-align:middle;
+  }
+  .admin-table tr:last-child td{border-bottom:none;}
+  .admin-table tr:hover td{background:#f8faff;}
+  .role-select{
+    padding:4px 10px;border-radius:7px;border:1px solid #dde5f4;
+    font-size:12px;font-family:var(--font);background:#f8faff;
+    color:#1a2540;cursor:pointer;outline:none;transition:all .2s;
+  }
+  .role-select:focus{border-color:#a78bfa;box-shadow:0 0 0 3px rgba(167,139,250,.15);}
+  .role-select:disabled{opacity:.4;cursor:not-allowed;}
+  .btn-save-role{
+    padding:4px 12px;border-radius:7px;
+    background:rgba(79,142,247,.1);border:1px solid rgba(79,142,247,.25);
+    color:#3a7de8;font-size:11px;font-weight:600;cursor:pointer;
+    font-family:var(--font);transition:all .2s;
+  }
+  .btn-save-role:hover{background:rgba(79,142,247,.2);}
+  .btn-save-role:disabled{opacity:.4;cursor:not-allowed;}
+  .btn-del-user{
+    padding:4px 12px;border-radius:7px;
+    background:rgba(248,113,104,.08);border:1px solid rgba(248,113,104,.25);
+    color:#e05a52;font-size:11px;font-weight:600;cursor:pointer;
+    font-family:var(--font);transition:all .2s;
+  }
+  .btn-del-user:hover{background:rgba(248,113,104,.18);}
+  .btn-del-user:disabled{opacity:.4;cursor:not-allowed;}
+  .admin-empty{padding:32px;text-align:center;color:#94a3b8;font-size:13px;}
+  .admin-toast{
+    position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(20px);
+    background:#1a2540;color:#fff;padding:10px 22px;border-radius:10px;
+    font-size:13px;z-index:2000;opacity:0;transition:all .3s;pointer-events:none;
+    white-space:nowrap;
+  }
+  .admin-toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  .admin-tag-admin  {background:rgba(248,113,104,.1);color:#e05a52;border:1px solid rgba(248,113,104,.2);}
+  .admin-tag-analyst{background:rgba(79,142,247,.1);color:#3a7de8;border:1px solid rgba(79,142,247,.2);}
+  .admin-tag-viewer {background:rgba(100,116,139,.08);color:#64748b;border:1px solid rgba(100,116,139,.18);}
+  .admin-role-badge{display:inline-block;padding:2px 9px;border-radius:8px;font-size:10px;font-weight:700;}
+
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════
+     欢迎落地页
+══════════════════════════════════════════════ -->
+<div id="landing">
+  <div class="landing-inner">
+    <!-- logo -->
+    <div class="landing-logo">📊</div>
+
+    <!-- 徽章 -->
+    <div class="landing-badge">
+      <span class="landing-badge-dot"></span>
+      系统运行中 · 2026
+    </div>
+
+    <!-- 主标题 -->
+    <div class="landing-title">数据驱动的<br><span>促销决策平台</span></div>
+
+    <!-- 副标题 -->
+    <p class="landing-subtitle">
+      集成因果推断 · 用户分群 · 智能预测 · 批量分析<br>
+      覆盖促销活动从效果评估到用户触达的全链路需求
+    </p>
+
+    <!-- 方法论标签 -->
+    <div class="landing-chips">
+      <div class="landing-chip"><span class="landing-chip-dot" style="background:var(--accent)"></span>PSM 因果推断</div>
+      <div class="landing-chip"><span class="landing-chip-dot" style="background:var(--purple)"></span>XGBoost 预测</div>
+      <div class="landing-chip"><span class="landing-chip-dot" style="background:var(--accent2)"></span>Uplift 分群</div>
+      <div class="landing-chip"><span class="landing-chip-dot" style="background:var(--accent3)"></span>RFM 价值模型</div>
+    </div>
+
+    <!-- 进入按钮 -->
+    <button class="landing-enter" onclick="enterApp()">
+      进入系统
+      <span class="enter-arrow">→</span>
+    </button>
+
+    <!-- 底部统计 -->
+    <div class="landing-stats">
+      <div class="landing-stat">
+        <div class="landing-stat-val" style="color:var(--accent)" id="ls-users">6.7万</div>
+        <div class="landing-stat-lab">用户总量</div>
+      </div>
+      <div class="landing-stat">
+        <div class="landing-stat-val" style="color:var(--accent2)" id="ls-conv">70.4%</div>
+        <div class="landing-stat-lab">整体转化率</div>
+      </div>
+      <div class="landing-stat">
+        <div class="landing-stat-val" style="color:var(--accent3)" id="ls-att">+8.5K</div>
+        <div class="landing-stat-lab">PSM 因果效应</div>
+      </div>
+      <div class="landing-stat">
+        <div class="landing-stat-val" style="color:var(--purple)">10</div>
+        <div class="landing-stat-lab">功能模块</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     主应用
+══════════════════════════════════════════════ -->
+<div id="app">
+
+<!-- ── 顶栏 ──────────────────────────────────────────────── -->
+<div class="topbar">
+  <a class="logo" href="/">
+    <div class="logo-icon">📊</div>
+    <div>
+      <div class="logo-text">电商促销评估系统</div>
+      <div class="logo-sub">E-COMMERCE PROMOTION ANALYTICS</div>
+    </div>
+  </a>
+  <nav class="nav">
+    <a href="/" class="active">🏠 首页</a>
+    <a href="/user/predict">🔮 转化预测</a>
+    <a href="/user/batch">📤 批量分析</a>
+    <a href="/user/profile">🔍 用户查询</a>
+    <a href="/promo/overview">🎯 KPI总览</a>
+    <a href="/promo/funnel">📉 转化漏斗</a>
+    <a href="/promo/trend">📊 销售趋势</a>
+    <a href="/promo/ate">⚖️ ATE对比</a>
+    <a href="/user/segments">🧩 用户分群</a>
+    <a href="/user/rfm">💎 RFM分布</a>
+  </nav>
+  <div class="topbar-right">
+    <div class="user-badge" id="userBadge">
+      <span>👤</span><span id="username">加载中</span>
+      <span class="role-badge" id="roleBadge"></span>
+    </div>
+    <button class="btn-admin" id="btnAdminPanel" onclick="openAdminPanel()" style="display:none">⚙ 账号管理</button>
+    <button class="btn-logout" onclick="logout()">退出登录</button>
+  </div>
+</div>
+
+<!-- ── 主内容 ─────────────────────────────────────────────── -->
+<div class="main">
+
+  <!-- Hero 区域 -->
+  <div style="max-width:1120px;margin:0 auto 48px;display:grid;grid-template-columns:1fr auto;gap:48px;align-items:center;padding:48px 0 0;">
+    <div>
+      <div class="hero-badge">
+        <span class="hero-badge-dot"></span>
+        电商促销活动效果评估系统 · 2026
+      </div>
+      <h1 style="font-size:38px;font-weight:800;line-height:1.2;letter-spacing:-.8px;margin-bottom:14px;color:#1a2540;">
+        数据驱动的<span style="background:linear-gradient(135deg,#4f8ef7,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">促销决策平台</span>
+      </h1>
+      <p style="font-size:14px;color:#64748b;line-height:1.75;max-width:500px;margin-bottom:24px;">
+        集成因果推断 · 用户分群 · 智能预测 · 批量分析<br>覆盖促销活动从效果评估到用户触达的全链路需求
+      </p>
+      <div class="hero-chips">
+        <div class="hero-chip"><span class="hero-chip-dot" style="background:#4f8ef7"></span>PSM 因果推断</div>
+        <div class="hero-chip"><span class="hero-chip-dot" style="background:#a78bfa"></span>XGBoost 预测</div>
+        <div class="hero-chip"><span class="hero-chip-dot" style="background:#3ecf8e"></span>Uplift 分群</div>
+        <div class="hero-chip"><span class="hero-chip-dot" style="background:#f7c948"></span>RFM 价值模型</div>
+      </div>
+    </div>
+    <div class="hero-stats">
+      <div class="stat-card s-blue">
+        <div class="stat-val" id="stat-users">6.7万</div>
+        <div class="stat-lab">用户总量</div>
+      </div>
+      <div class="stat-card s-green">
+        <div class="stat-val" id="stat-conv">70.4%</div>
+        <div class="stat-lab">整体转化率</div>
+      </div>
+      <div class="stat-card s-yellow">
+        <div class="stat-val" id="stat-att">+8.5K</div>
+        <div class="stat-lab">PSM 因果效应</div>
+      </div>
+      <div class="stat-card s-purple">
+        <div class="stat-val">10</div>
+        <div class="stat-lab">功能模块</div>
+      </div>
+    </div>
+  </div>
+
+
+
+  <!-- ① 智能预测（第一行，全宽单列大卡展示） -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-stripe" style="background:linear-gradient(180deg,var(--purple),rgba(167,139,250,.2))"></div>
+      <div class="section-title-group">
+        <h2>智能预测</h2>
+        <p>XGBoost 转化率预测模型 · 实时评分 · 批量分析 · 用户画像</p>
+      </div>
+      <div class="section-count" style="background:rgba(167,139,250,.1);color:var(--purple);border:1px solid rgba(167,139,250,.2);">3 个功能</div>
+    </div>
+    <div class="cards-grid col3">
+      <a class="fn-card c-purple" href="/user/predict" data-perm="predict">
+        <div class="card-icon">🔮</div>
+        <div class="card-title">实时单用户转化率预测</div>
+        <div class="card-desc">输入用户6项行为特征（浏览次数、收藏次数、品类偏好、活跃天数、高峰时段、周末活跃占比），XGBoost 模型实时返回转化概率与运营建议，支持高/中/低三档分层。</div>
+        <div class="card-tags">
+          <span class="tag tag-accent">XGBoost</span>
+          <span class="tag tag-accent">AUC=0.96</span>
+          <span class="tag tag-accent">实时推理</span>
+        </div>
+        <div class="lock-tip">🔒 权限不足</div>
+        <span class="card-arrow">→</span>
+      </a>
+      <a class="fn-card c-cyan" href="/user/batch" data-perm="user.batch">
+        <div class="card-icon">📤</div>
+        <div class="card-title">批量 CSV 四象限分类</div>
+        <div class="card-desc">上传用户行为数据（最多5万条），自动调用模型预测每位用户的转化概率并归入四个象限，支持拖拽上传，内含下载分类结果与模板功能。</div>
+        <div class="card-tags">
+          <span class="tag tag-accent">最多5万条</span>
+          <span class="tag tag-accent">拖拽上传</span>
+          <span class="tag tag-accent">结果下载</span>
+        </div>
+        <div class="lock-tip">🔒 仅管理员可用</div>
+        <span class="card-arrow">→</span>
+      </a>
+      <a class="fn-card c-blue" href="/user/profile" data-perm="user.profile">
+        <div class="card-icon">🔍</div>
+        <div class="card-title">单用户画像查询</div>
+        <div class="card-desc">上传用户数据 CSV，输入用户ID即时返回该用户的完整 RFM 特征（最近购买天数、购买频次、消费金额）、价值等级及偏好品类。</div>
+        <div class="card-tags">
+          <span class="tag tag-accent">RFM评分</span>
+          <span class="tag tag-accent">CSV查询</span>
+          <span class="tag tag-accent">行为特征</span>
+        </div>
+        <div class="lock-tip">🔒 权限不足</div>
+        <span class="card-arrow">→</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- ② 促销效果分析 -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-stripe" style="background:linear-gradient(180deg,var(--accent),rgba(79,142,247,.2))"></div>
+      <div class="section-title-group">
+        <h2>促销效果分析</h2>
+        <p>多方案促销活动对比 · 因果推断 · 销售趋势</p>
+      </div>
+      <div class="section-count" style="background:rgba(79,142,247,.1);color:var(--accent);border:1px solid rgba(79,142,247,.2);">4 个功能</div>
+    </div>
+    <div class="cards-grid col4">
+      <a class="fn-card c-blue" href="/promo/overview" data-perm="promo.overview">
+        <div class="card-icon">🎯</div>
+        <div class="card-title">促销 KPI 总览</div>
+        <div class="card-desc">整体转化率、GMV、PSM ATT、Uplift CATE 四大核心指标，一屏掌握活动成效。</div>
+        <div class="card-tags">
+          <span class="tag tag-accent">转化率</span>
+          <span class="tag tag-accent">GMV</span>
+          <span class="tag tag-accent">ATT</span>
+        </div>
+        <div class="lock-tip">🔒 权限不足</div>
+        <span class="card-arrow">→</span>
+      </a>
+      <a class="fn-card c-blue" href="/promo/funnel" data-perm="promo.overview">
+        <div class="card-icon">📉</div>
+        <div class="card-title">点击→收藏→购买<br>转化漏斗</div>
+        <div class="card-desc">可视化用户从浏览到购买的每步流失，定位转化瓶颈。</div>
+        <div class="card-tags">
+          <span class="tag tag-accent">PV</span>
+          <span class="tag tag-accent">FAV</span>
+          <span class="tag tag-accent">BUY</span>
+        </div>
+        <div class="lock-tip">🔒 权限不足</div>
+        <span class="card-arrow">→</span>
+      </a>
+      <a class="fn-card c-green" href="/promo/trend" data-perm="promo.trend">
+        <div class="card-icon">📊</div>
+        <div class="card-title">周度销售额趋势</div>
+        <div class="card-desc">满减 / 折扣 / 优惠券三方案4周销售走势对比，看出哪种方案持续性更好。</div>
+        <div class="card-tags">
+          <span class="tag tag-accent">满减</span>
+          <span class="tag tag-accent">折扣</span>
+          <span class="tag tag-accent">优惠券</span>
+        </div>
+        <div class="lock-tip">🔒 权限不足</div>
+        <span class="card-arrow">→</span>
+      </a>
+      <a class="fn-card c-yellow" href="/promo/ate" data-perm="promo.ate">
+        <div class="card-icon">⚖️</div>
+        <div class="card-title">ATE 因果效应对比</div>
+        <div class="card-desc">PSM、DiD、Uplift 三种因果推断交叉验证，附显著性检验。</div>
+        <div class="card-tags">
+          <span class="tag tag-accent">PSM</span>
+          <span class="tag tag-accent">DiD</span>
+          <span class="tag tag-accent">Uplift</span>
+        </div>
+        <div class="lock-tip">🔒 权限不足</div>
+        <span class="card-arrow">→</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- ③ 用户行为与分群分析 -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-stripe" style="background:linear-gradient(180deg,var(--accent2),rgba(62,207,142,.2))"></div>
+      <div class="section-title-group">
+        <h2>用户行为与分群分析</h2>
+        <p>Uplift 四象限分群 · RFM 价值模型 · 品类偏好</p>
+      </div>
+      <div class="section-count" style="background:rgba(62,207,142,.1);color:var(--accent2);border:1px solid rgba(62,207,142,.2);">4 个功能</div>
+    </div>
+    <div class="cards-grid col4">
+      <a class="fn-card c-blue" href="/user/segments" data-perm="user.segments">
+        <div class="card-icon">🧩</div>
+        <div class="card-title">Uplift 四象限用户分群</div>
+        <div class="card-desc">基于T-Learner将用户分为可说服型、自然转化型、抗拒型、待激活型四类。</div>
+        <div class="card-tags">
+          <span class="tag tag-accent">可说服型</span>
+          <span class="tag tag-accent">待激活型</span>
+        </div>
+        <div class="lock-tip">🔒 权限不足</div>
+        <span class="card-arrow">→</span>
+      </a>
+      <a class="fn-card c-green" href="/user/segments" data-perm="user.funnel">
+        <div class="card-icon">📡</div>
+        <div class="card-title">Uplift CATE 效应分布</div>
+        <div class="card-desc">每位用户"促销→转化概率提升"直方图，正值有效，负值抗拒。</div>
+        <div class="card-tags">
+          <span class="tag tag-accent">CATE</span>
+          <span class="tag tag-accent">T-Learner</span>
+        </div>
+        <div class="lock-tip">🔒 权限不足</div>
+        <span class="card-arrow">→</span>
+      </a>
+      <a class="fn-card c-purple" href="/user/rfm" data-perm="user.rfm">
+        <div class="card-icon">💎</div>
+        <div class="card-title">RFM 用户价值三维分布</div>
+        <div class="card-desc">R×F×M 三维气泡图，直观展示用户价值分布与高价值人群。</div>
+        <div class="card-tags">
+          <span class="tag tag-accent">Recency</span>
+          <span class="tag tag-accent">Frequency</span>
+        </div>
+        <div class="lock-tip">🔒 权限不足</div>
+        <span class="card-arrow">→</span>
+      </a>
+      <a class="fn-card c-yellow" href="/user/rfm" data-perm="user.segments">
+        <div class="card-icon">🛍️</div>
+        <div class="card-title">购买用户品类偏好</div>
+        <div class="card-desc">已购用户商品类别分布，了解哪些品类对促销最敏感。</div>
+        <div class="card-tags">
+          <span class="tag tag-accent">电器</span>
+          <span class="tag tag-accent">服装</span>
+          <span class="tag tag-accent">电子</span>
+        </div>
+        <div class="lock-tip">🔒 权限不足</div>
+        <span class="card-arrow">→</span>
+      </a>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<!-- ── 页脚 ─────────────────────────────────────────────── -->
+<div class="footer">
+  <span>数据来源：WA Marketing Campaign · UserBehavior_2025 · 日志行为数据</span>
+  <span>论文：电商促销活动效果评估与用户转化率预测模型评估系统 · 韩颜泽 · 2026</span>
+</div>
+
+</div><!-- /app -->
+
+<script>
+const API = 'http://localhost:5000/api';
+
+/* ── 落地页 → 主应用 渐变切换 ── */
+function enterApp() {
+  document.getElementById('landing').classList.add('hidden');
+  document.body.classList.add('app-mode');
+  setTimeout(() => {
+    document.body.style.overflow = '';
+    const app = document.getElementById('app');
+    app.classList.add('visible');
+  }, 50);
+}
+
+/* 初始：锁定滚动（落地页阶段） */
+document.body.style.overflow = 'hidden';
+
+/* ── 权限 ── */
+const ROLE_PERMS = {
+  admin:   ['*'],
+  analyst: ['promo.overview','promo.trend','promo.ate',
+            'user.segments','user.rfm','user.funnel',
+            'model.metrics','predict','user.profile','user.batch'],
+  viewer:  ['promo.overview','promo.trend'],
+};
+function hasPerm(role, perm) {
+  const perms = ROLE_PERMS[role] || [];
+  return perms.includes('*') || perms.includes(perm);
+}
+const ROLE_LABEL = { admin:'管理员', analyst:'分析师', viewer:'访客' };
+const ROLE_CLASS = { admin:'role-admin', analyst:'role-analyst', viewer:'role-viewer' };
+
+fetch('/api/auth/status').then(r=>r.json()).then(res=>{
+  if (!res.data || !res.data.logged_in) { location.href = '/login'; return; }
+  const { username, role } = res.data;
+  document.getElementById('username').textContent = username;
+  const badge = document.getElementById('roleBadge');
+  badge.textContent = ROLE_LABEL[role] || role;
+  badge.className = 'role-badge ' + (ROLE_CLASS[role] || '');
+
+  // admin 才显示账号管理按钮
+  if (role === 'admin') {
+    document.getElementById('btnAdminPanel').style.display = '';
+  }
+
+  document.querySelectorAll('.fn-card[data-perm]').forEach(card => {
+    const perm = card.getAttribute('data-perm');
+    if (!hasPerm(role, perm)) {
+      card.classList.add('no-perm');
+      card.removeAttribute('href');
+    }
+  });
+});
+
+function logout() {
+  fetch('/api/logout', {method:'POST'}).then(() => location.href = '/login');
+}
+
+/* ── 数据初始化 ── */
+async function init() {
+  try {
+    const res = await fetch(`${API}/health`, {signal:AbortSignal.timeout(3000)});
+    const d   = await res.json();
+  } catch {
+    // 后端连接状态不显示
+  }
+  try {
+    const res = await fetch(`${API}/promo/overview`, {signal:AbortSignal.timeout(5000)});
+    const d   = await res.json();
+    if (d.code === 0) {
+      const uv = (d.data.total_users/10000).toFixed(1)+'万';
+      const cv = d.data.conversion_rate+'%';
+      const av = '+'+d.data.att_k+'K';
+      // 主应用统计
+      document.getElementById('stat-users').textContent = uv;
+      document.getElementById('stat-conv').textContent  = cv;
+      document.getElementById('stat-att').textContent   = av;
+      // 落地页统计
+      document.getElementById('ls-users').textContent = uv;
+      document.getElementById('ls-conv').textContent  = cv;
+      document.getElementById('ls-att').textContent   = av;
+    }
+  } catch {}
+}
+init();
+</script>
+<!-- ══════════════════════════════════════════════
+     账号管理弹窗（仅 admin 可操作）
+══════════════════════════════════════════════ -->
+<div class="admin-overlay" id="adminOverlay" onclick="closeAdminPanel(event)">
+  <div class="admin-panel">
+    <div class="admin-panel-head">
+      <div class="admin-panel-title">⚙ 账号管理</div>
+      <button class="admin-panel-close" onclick="closeAdminPanel(null)">✕</button>
+    </div>
+    <div class="admin-panel-body">
+      <div id="adminTableWrap">
+        <div class="admin-empty">加载中…</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- toast 提示 -->
+<div class="admin-toast" id="adminToast"></div>
+
+<script>
+/* ─────────────────────────────────────────────
+   账号管理面板
+───────────────────────────────────────────── */
+const ROLE_LABEL_MAP = { admin:'管理员', analyst:'分析师', viewer:'访客' };
+
+function showToast(msg, isErr) {
+  const t = document.getElementById('adminToast');
+  t.textContent = msg;
+  t.style.background = isErr ? '#e05a52' : '#1a2540';
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+function openAdminPanel() {
+  document.getElementById('adminOverlay').classList.add('open');
+  loadAdminUsers();
+}
+
+function closeAdminPanel(e) {
+  if (e && e.target !== document.getElementById('adminOverlay')) return;
+  document.getElementById('adminOverlay').classList.remove('open');
+}
+
+async function loadAdminUsers() {
+  const wrap = document.getElementById('adminTableWrap');
+  wrap.innerHTML = '<div class="admin-empty">加载中…</div>';
+  try {
+    const res = await fetch('/api/admin/users');
+    const d = await res.json();
+    if (d.code !== 0) { wrap.innerHTML = `<div class="admin-empty" style="color:#e05a52">${d.message}</div>`; return; }
+    const users = d.data.users;
+    if (!users.length) { wrap.innerHTML = '<div class="admin-empty">暂无用户</div>'; return; }
+
+    const currentUser = document.getElementById('username').textContent;
+    let html = `<table class="admin-table">
+      <thead><tr>
+        <th>用户名</th>
+        <th>当前权限</th>
+        <th>修改权限</th>
+        <th>操作</th>
+      </tr></thead><tbody>`;
+
+    users.forEach(u => {
+      const isSelf = u.username === currentUser;
+      const tagCls = `admin-role-badge admin-tag-${u.role}`;
+      html += `<tr>
+        <td><b>${u.username}</b>${isSelf ? ' <span style="font-size:10px;color:#94a3b8">(当前账号)</span>' : ''}</td>
+        <td><span class="${tagCls}">${ROLE_LABEL_MAP[u.role] || u.role}</span></td>
+        <td>
+          <select class="role-select" id="role-select-${u.username}" ${isSelf?'disabled':''}>
+            <option value="admin"   ${u.role==='admin'   ?'selected':''}>管理员</option>
+            <option value="analyst" ${u.role==='analyst' ?'selected':''}>分析师</option>
+            <option value="viewer"  ${u.role==='viewer'  ?'selected':''}>访客</option>
+          </select>
+        </td>
+        <td style="display:flex;gap:6px;align-items:center">
+          <button class="btn-save-role" ${isSelf?'disabled':''} onclick="saveRole('${u.username}')">保存</button>
+          <button class="btn-del-user"  ${isSelf?'disabled':''} onclick="deleteUser('${u.username}')">注销</button>
+        </td>
+      </tr>`;
+    });
+    html += '</tbody></table>';
+    wrap.innerHTML = html;
+  } catch(e) {
+    wrap.innerHTML = '<div class="admin-empty" style="color:#e05a52">加载失败，请重试</div>';
+  }
+}
+
+async function saveRole(username) {
+  const sel = document.getElementById(`role-select-${username}`);
+  if (!sel) return;
+  const newRole = sel.value;
+  try {
+    const res = await fetch(`/api/admin/users/${encodeURIComponent(username)}/role`, {
+      method: 'PUT',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({role: newRole})
+    });
+    const d = await res.json();
+    if (d.code === 0) { showToast(`✓ ${d.message}`); loadAdminUsers(); }
+    else showToast(d.message, true);
+  } catch { showToast('网络错误，请重试', true); }
+}
+
+async function deleteUser(username) {
+  if (!confirm(`确定要注销账号「${username}」？此操作不可撤销。`)) return;
+  try {
+    const res = await fetch(`/api/admin/users/${encodeURIComponent(username)}`, {method:'DELETE'});
+    const d = await res.json();
+    if (d.code === 0) { showToast(`✓ ${d.message}`); loadAdminUsers(); }
+    else showToast(d.message, true);
+  } catch { showToast('网络错误，请重试', true); }
+}
+</script>
+</body>
+</html>

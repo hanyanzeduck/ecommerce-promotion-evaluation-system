@@ -1,0 +1,6 @@
+{
+  "demo_admin": {
+    "password": "Use the application's registration flow or replace this file with your own account store.",
+    "role": "admin"
+  }
+}

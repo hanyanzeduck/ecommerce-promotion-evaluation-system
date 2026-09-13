@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>登录 · 电商促销评估系统</title>
+<style>
+  :root {
+    --bg:#f0f4fa; --card:#ffffff; --border:#e2e8f0;
+    --accent:#4f8ef7; --accent2:#3ecf8e; --accent4:#f87168;
+    --text:#1a2540; --muted:#64748b;
+    --font:'Microsoft YaHei','PingFang SC',sans-serif;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body {
+    background:linear-gradient(160deg,#eef3fb 0%,#f4f7fd 50%,#edf2fb 100%);
+    color:var(--text); font-family:var(--font);
+    display:flex; flex-direction:column; align-items:center;
+    justify-content:center; min-height:100vh; padding:20px;
+  }
+
+  /* 品牌标题 */
+  .brand { text-align:center; margin-bottom:28px; }
+  .brand-icon {
+    width:48px; height:48px;
+    background:linear-gradient(135deg,#4f8ef7,#a78bfa);
+    border-radius:14px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:24px; margin:0 auto 12px;
+    box-shadow:0 6px 20px rgba(79,142,247,.25);
+  }
+  .brand h1 { font-size:18px; font-weight:700; color:#1a2540; }
+  .brand p  { font-size:12px; color:#64748b; margin-top:4px; }
+
+  /* 卡片 */
+  .box {
+    background:#ffffff; border:1px solid #e2e8f0;
+    border-radius:16px; padding:32px 36px; width:100%; max-width:400px;
+    transition:all .25s; box-shadow:0 4px 24px rgba(100,120,160,.10);
+  }
+
+  /* Tab 切换 */
+  .tabs {
+    display:flex; gap:4px; margin-bottom:28px;
+    background:#f1f5fd; border-radius:10px; padding:4px;
+  }
+  .tab {
+    flex:1; padding:7px 0; text-align:center; font-size:13px; font-weight:600;
+    border-radius:7px; cursor:pointer; color:#64748b;
+    border:none; background:transparent; font-family:var(--font);
+    transition:all .2s;
+  }
+  .tab.active { background:#ffffff; color:#1a2540; box-shadow:0 1px 6px rgba(100,120,160,.15); }
+
+  /* 表单 */
+  .panel { display:none; }
+  .panel.active { display:block; }
+
+  .form-title { font-size:16px; font-weight:700; margin-bottom:6px; }
+  .form-sub   { font-size:12px; color:var(--muted); margin-bottom:22px; line-height:1.6; }
+
+  label { font-size:12px; color:var(--muted); display:block; margin-bottom:5px; font-weight:500; }
+  input, textarea {
+    width:100%; padding:10px 14px; border-radius:8px;
+    border:1px solid #e2e8f0; background:#f8faff;
+    color:#1a2540; font-size:14px; outline:none;
+    margin-bottom:14px; font-family:var(--font);
+    transition:border-color .2s;
+  }
+  input:focus, textarea:focus { border-color:var(--accent); background:#fff; box-shadow:0 0 0 3px rgba(79,142,247,.08); }
+  textarea { resize:vertical; min-height:56px; line-height:1.5; }
+
+  /* 密码强度条 */
+  .strength-wrap { margin:-8px 0 14px; }
+  .strength-bar {
+    height:3px; border-radius:2px; background:var(--border);
+    overflow:hidden; margin-bottom:4px;
+  }
+  .strength-fill { height:100%; width:0; transition:width .3s, background .3s; border-radius:2px; }
+  .strength-text { font-size:11px; color:var(--muted); }
+
+  /* 按钮 */
+  .btn {
+    width:100%; padding:11px; border-radius:8px; border:none;
+    background:var(--accent); color:#fff; font-size:14px;
+    font-weight:600; cursor:pointer; font-family:var(--font);
+    transition:opacity .2s; margin-top:4px;
+  }
+  .btn:hover { opacity:.88; }
+  .btn:disabled { opacity:.45; cursor:not-allowed; }
+  .btn.loading::after { content:' ...'; }
+
+  /* 提示框 */
+  .msg {
+    font-size:12px; margin-top:14px; text-align:center;
+    padding:9px 14px; border-radius:8px; display:none;
+    line-height:1.5;
+  }
+  .msg.err  { color:var(--accent4); background:rgba(248,113,104,.1); border:1px solid rgba(248,113,104,.25); }
+  .msg.ok   { color:var(--accent2); background:rgba(62,207,142,.1); border:1px solid rgba(62,207,142,.25); }
+  .msg.info { color:var(--accent);  background:rgba(79,142,247,.1); border:1px solid rgba(79,142,247,.25); }
+
+  /* 提示文字（问题说明） */
+  .tip-box {
+    background:rgba(79,142,247,.07); border:1px solid rgba(79,142,247,.2);
+    border-radius:8px; padding:10px 13px; margin-bottom:14px; font-size:12px;
+    color:var(--muted); line-height:1.7;
+  }
+  .tip-box strong { color:var(--accent); }
+
+  /* 步骤指示 */
+  .steps {
+    display:flex; align-items:center; gap:6px;
+    margin-bottom:20px; font-size:12px;
+  }
+  .step {
+    width:24px; height:24px; border-radius:50%; border:1px solid var(--border);
+    display:flex; align-items:center; justify-content:center;
+    font-size:11px; font-weight:700; color:var(--muted); flex-shrink:0;
+  }
+  .step.active { background:var(--accent); border-color:var(--accent); color:#fff; }
+  .step.done   { background:var(--accent2); border-color:var(--accent2); color:#fff; }
+  .step-line   { flex:1; height:1px; background:var(--border); }
+
+  /* 已查到的问题展示 */
+  .question-display {
+    background:#f8faff; border:1px solid #e2e8f0; border-radius:8px;
+    padding:12px 14px; margin-bottom:14px; font-size:13px;
+    color:#1a2540; line-height:1.6; display:none;
+  }
+  .question-display span { color:#64748b; font-size:11px; display:block; margin-bottom:4px; }
+</style>
+</head>
+<body>
+
+<div class="brand">
+  <div class="brand-icon">📊</div>
+  <h1>电商促销评估系统</h1>
+  <p>E-Commerce Promotion Analytics</p>
+</div>
+
+<div class="box">
+  <!-- Tab 导航 -->
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('login')">登 录</button>
+    <button class="tab" onclick="switchTab('register')">注 册</button>
+    <button class="tab" onclick="switchTab('changepwd')">修改密码</button>
+  </div>
+
+  <!-- ① 登录面板 -->
+  <div class="panel active" id="panel-login">
+    <div class="form-title">欢迎回来</div>
+    <div class="form-sub">请输入您的账号和密码</div>
+
+    <label>用户名</label>
+    <input id="login-username" type="text" placeholder="请输入用户名" autocomplete="username" />
+    <label>密码</label>
+    <input id="login-password" type="password" placeholder="请输入密码" autocomplete="current-password" />
+
+    <button class="btn" id="btn-login" onclick="doLogin()">登 录</button>
+    <div class="msg" id="msg-login"></div>
+  </div>
+
+  <!-- ② 注册面板 -->
+  <div class="panel" id="panel-register">
+    <div class="form-title">创建账号</div>
+    <div class="form-sub">注册时需要设置验证问题，以便日后找回密码</div>
+
+    <label>用户名 <span style="color:var(--muted);font-weight:400">（2~20位字母/数字/下划线）</span></label>
+    <input id="reg-username" type="text" placeholder="请输入用户名" autocomplete="username" oninput="checkUsername()" />
+
+    <label>密码 <span style="color:var(--muted);font-weight:400">（至少6位）</span></label>
+    <input id="reg-password" type="password" placeholder="请设置密码" autocomplete="new-password" oninput="updateStrength()" />
+    <div class="strength-wrap">
+      <div class="strength-bar"><div class="strength-fill" id="strength-fill"></div></div>
+      <div class="strength-text" id="strength-text">请输入密码</div>
+    </div>
+
+    <label>确认密码</label>
+    <input id="reg-password2" type="password" placeholder="再次输入密码" autocomplete="new-password" />
+
+    <div class="tip-box">
+      <strong>🔐 设置验证问题</strong><br>
+      请自定义一个只有您自己知道答案的问题，忘记密码时需要通过回答此问题来验证身份。<br>
+      例如："我养的第一只宠物叫什么名字？"
+    </div>
+
+    <label>验证问题</label>
+    <textarea id="reg-question" placeholder="请输入您的验证问题（建议设置私密、不易被猜到的问题）" rows="2"></textarea>
+
+    <label>验证答案 <span style="color:var(--muted);font-weight:400">（不区分大小写）</span></label>
+    <input id="reg-answer" type="text" placeholder="请输入验证答案" />
+
+    <button class="btn" id="btn-register" onclick="doRegister()">立即注册</button>
+    <div class="msg" id="msg-register"></div>
+  </div>
+
+  <!-- ③ 修改密码面板 -->
+  <div class="panel" id="panel-changepwd">
+    <div class="form-title">修改密码</div>
+    <div class="form-sub">需要正确回答注册时设置的验证问题才能修改密码</div>
+
+    <!-- 步骤指示 -->
+    <div class="steps">
+      <div class="step active" id="cp-step1">1</div>
+      <div class="step-line"></div>
+      <div class="step" id="cp-step2">2</div>
+      <div class="step-line"></div>
+      <div class="step" id="cp-step3">3</div>
+    </div>
+
+    <!-- Step 1：输入用户名，获取验证问题 -->
+    <div id="cp-phase1">
+      <label>用户名</label>
+      <input id="cp-username" type="text" placeholder="请输入要修改密码的用户名" />
+      <button class="btn" id="btn-getq" onclick="doGetQuestion()">下一步：获取验证问题</button>
+    </div>
+
+    <!-- Step 2：回答验证问题 -->
+    <div id="cp-phase2" style="display:none;">
+      <div class="question-display" id="cp-question-display" style="display:block;">
+        <span>您的验证问题</span>
+        <div id="cp-question-text"></div>
+      </div>
+      <label>验证答案 <span style="color:var(--muted);font-weight:400">（不区分大小写）</span></label>
+      <input id="cp-answer" type="text" placeholder="请输入验证答案" />
+
+      <label>新密码 <span style="color:var(--muted);font-weight:400">（至少6位）</span></label>
+      <input id="cp-newpwd" type="password" placeholder="请输入新密码" oninput="updateStrengthCP()" />
+      <div class="strength-wrap">
+        <div class="strength-bar"><div class="strength-fill" id="cp-strength-fill"></div></div>
+        <div class="strength-text" id="cp-strength-text">请输入新密码</div>
+      </div>
+
+      <label>确认新密码</label>
+      <input id="cp-newpwd2" type="password" placeholder="再次输入新密码" />
+
+      <div style="display:flex;gap:10px;margin-top:4px;">
+        <button class="btn" style="background:var(--border);color:var(--text);flex:0 0 80px;" onclick="resetCP()">← 返回</button>
+        <button class="btn" id="btn-changepwd" onclick="doChangePwd()">确认修改</button>
+      </div>
+    </div>
+
+    <!-- Step 3：成功提示 -->
+    <div id="cp-phase3" style="display:none;text-align:center;padding:10px 0;">
+      <div style="font-size:36px;margin-bottom:14px;">✅</div>
+      <div style="font-size:15px;font-weight:600;margin-bottom:8px;">密码修改成功</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:20px;">请使用新密码重新登录</div>
+      <button class="btn" onclick="switchTab('login')">去登录</button>
+    </div>
+
+    <div class="msg" id="msg-changepwd"></div>
+  </div>
+</div>
+
+<script>
+// ── Tab 切换 ──────────────────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    t.classList.toggle('active', ['login','register','changepwd'][i] === tab);
+  });
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-' + tab).classList.add('active');
+  clearAllMsgs();
+}
+
+function clearAllMsgs() {
+  document.querySelectorAll('.msg').forEach(el => { el.style.display='none'; el.textContent=''; });
+}
+
+function showMsg(id, text, type='err') {
+  const el = document.getElementById(id);
+  el.textContent = text;
+  el.className = 'msg ' + type;
+  el.style.display = 'block';
+}
+
+// ── 已登录则直接跳转 ──────────────────────────────────────
+fetch('/api/auth/status').then(r=>r.json()).then(res=>{
+  if(res.data && res.data.logged_in) location.href='/';
+});
+
+// 根据 URL 自动切到对应面板
+if (location.pathname === '/register') switchTab('register');
+else if (location.pathname === '/change-password') switchTab('changepwd');
+
+// ── 回车触发当前面板主按钮 ────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Enter') return;
+  const active = document.querySelector('.panel.active');
+  if (!active) return;
+  if (active.id === 'panel-login')    doLogin();
+  if (active.id === 'panel-register') doRegister();
+  if (active.id === 'panel-changepwd') {
+    if (document.getElementById('cp-phase1').style.display !== 'none') doGetQuestion();
+    else if (document.getElementById('cp-phase2').style.display !== 'none') doChangePwd();
+  }
+});
+
+// ── ① 登录 ───────────────────────────────────────────────
+function doLogin() {
+  const username = document.getElementById('login-username').value.trim();
+  const password = document.getElementById('login-password').value;
+  if (!username || !password) { showMsg('msg-login','请填写用户名和密码'); return; }
+
+  const btn = document.getElementById('btn-login');
+  btn.disabled = true; btn.classList.add('loading');
+
+  fetch('/api/login', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({username, password})
+  }).then(r=>r.json()).then(res=>{
+    if (res.code === 0) {
+      location.href = '/';
+    } else {
+      showMsg('msg-login', res.message || '登录失败');
+      btn.disabled = false; btn.classList.remove('loading');
+    }
+  }).catch(()=>{
+    showMsg('msg-login','网络错误，请重试');
+    btn.disabled = false; btn.classList.remove('loading');
+  });
+}
+
+// ── ② 注册 ───────────────────────────────────────────────
+function checkUsername() {
+  const val = document.getElementById('reg-username').value;
+  const ok  = /^[a-zA-Z0-9_\-]{2,20}$/.test(val);
+  document.getElementById('reg-username').style.borderColor = val ? (ok ? 'var(--accent2)' : 'var(--accent4)') : '';
+}
+
+function calcStrength(pwd) {
+  if (!pwd) return { score:0, label:'请输入密码', color:'var(--border)' };
+  let score = 0;
+  if (pwd.length >= 6)  score++;
+  if (pwd.length >= 10) score++;
+  if (/[A-Z]/.test(pwd)) score++;
+  if (/[0-9]/.test(pwd)) score++;
+  if (/[^a-zA-Z0-9]/.test(pwd)) score++;
+  const labels = ['','极弱','弱','中等','强','非常强'];
+  const colors = ['','#f87168','#f87168','#f7c948','#3ecf8e','#4f8ef7'];
+  return { score, label: labels[score]||'极弱', color: colors[score]||'#f87168' };
+}
+
+function updateStrength() {
+  const pwd = document.getElementById('reg-password').value;
+  const { score, label, color } = calcStrength(pwd);
+  document.getElementById('strength-fill').style.width = (score/5*100) + '%';
+  document.getElementById('strength-fill').style.background = color;
+  document.getElementById('strength-text').textContent = pwd ? '密码强度：' + label : '请输入密码';
+}
+
+function updateStrengthCP() {
+  const pwd = document.getElementById('cp-newpwd').value;
+  const { score, label, color } = calcStrength(pwd);
+  document.getElementById('cp-strength-fill').style.width = (score/5*100) + '%';
+  document.getElementById('cp-strength-fill').style.background = color;
+  document.getElementById('cp-strength-text').textContent = pwd ? '密码强度：' + label : '请输入新密码';
+}
+
+function doRegister() {
+  const username = document.getElementById('reg-username').value.trim();
+  const password = document.getElementById('reg-password').value;
+  const password2 = document.getElementById('reg-password2').value;
+  const question = document.getElementById('reg-question').value.trim();
+  const answer   = document.getElementById('reg-answer').value.trim();
+
+  if (!username) { showMsg('msg-register','请输入用户名'); return; }
+  if (!/^[a-zA-Z0-9_\-]{2,20}$/.test(username)) {
+    showMsg('msg-register','用户名只能包含字母、数字、下划线、连字符，长度2~20'); return;
+  }
+  if (!password) { showMsg('msg-register','请输入密码'); return; }
+  if (password.length < 6) { showMsg('msg-register','密码长度不能少于6位'); return; }
+  if (password !== password2) { showMsg('msg-register','两次密码输入不一致'); return; }
+  if (!question) { showMsg('msg-register','请设置验证问题'); return; }
+  if (!answer)   { showMsg('msg-register','请填写验证答案'); return; }
+
+  const btn = document.getElementById('btn-register');
+  btn.disabled = true; btn.classList.add('loading');
+
+  fetch('/api/register', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({username, password, question, answer})
+  }).then(r=>r.json()).then(res=>{
+    if (res.code === 0) {
+      showMsg('msg-register','🎉 注册成功！正在跳转登录...','ok');
+      setTimeout(()=>switchTab('login'), 1500);
+    } else {
+      showMsg('msg-register', res.message || '注册失败');
+    }
+    btn.disabled = false; btn.classList.remove('loading');
+  }).catch(()=>{
+    showMsg('msg-register','网络错误，请重试');
+    btn.disabled = false; btn.classList.remove('loading');
+  });
+}
+
+// ── ③ 修改密码 ────────────────────────────────────────────
+function doGetQuestion() {
+  const username = document.getElementById('cp-username').value.trim();
+  if (!username) { showMsg('msg-changepwd','请输入用户名'); return; }
+
+  const btn = document.getElementById('btn-getq');
+  btn.disabled = true; btn.classList.add('loading');
+
+  fetch('/api/auth/question', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({username})
+  }).then(r=>r.json()).then(res=>{
+    if (res.code === 0) {
+      document.getElementById('cp-question-text').textContent = res.data.question;
+      document.getElementById('cp-phase1').style.display = 'none';
+      document.getElementById('cp-phase2').style.display = 'block';
+      document.getElementById('cp-step1').className = 'step done';
+      document.getElementById('cp-step2').className = 'step active';
+      clearAllMsgs();
+    } else {
+      showMsg('msg-changepwd', res.message || '查询失败');
+    }
+    btn.disabled = false; btn.classList.remove('loading');
+  }).catch(()=>{
+    showMsg('msg-changepwd','网络错误，请重试');
+    btn.disabled = false; btn.classList.remove('loading');
+  });
+}
+
+function doChangePwd() {
+  const username    = document.getElementById('cp-username').value.trim();
+  const answer      = document.getElementById('cp-answer').value.trim();
+  const new_password = document.getElementById('cp-newpwd').value;
+  const new_password2 = document.getElementById('cp-newpwd2').value;
+
+  if (!answer)        { showMsg('msg-changepwd','请输入验证答案'); return; }
+  if (!new_password)  { showMsg('msg-changepwd','请输入新密码'); return; }
+  if (new_password.length < 6) { showMsg('msg-changepwd','新密码长度不能少于6位'); return; }
+  if (new_password !== new_password2) { showMsg('msg-changepwd','两次密码输入不一致'); return; }
+
+  const btn = document.getElementById('btn-changepwd');
+  btn.disabled = true; btn.classList.add('loading');
+
+  fetch('/api/change-password', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({username, answer, new_password})
+  }).then(r=>r.json()).then(res=>{
+    if (res.code === 0) {
+      document.getElementById('cp-phase2').style.display = 'none';
+      document.getElementById('cp-phase3').style.display = 'block';
+      document.getElementById('cp-step2').className = 'step done';
+      document.getElementById('cp-step3').className = 'step done';
+      clearAllMsgs();
+    } else {
+      showMsg('msg-changepwd', res.message || '修改失败');
+      btn.disabled = false; btn.classList.remove('loading');
+    }
+  }).catch(()=>{
+    showMsg('msg-changepwd','网络错误，请重试');
+    btn.disabled = false; btn.classList.remove('loading');
+  });
+}
+
+function resetCP() {
+  document.getElementById('cp-phase1').style.display = 'block';
+  document.getElementById('cp-phase2').style.display = 'none';
+  document.getElementById('cp-step1').className = 'step active';
+  document.getElementById('cp-step2').className = 'step';
+  document.getElementById('cp-answer').value = '';
+  document.getElementById('cp-newpwd').value = '';
+  document.getElementById('cp-newpwd2').value = '';
+  clearAllMsgs();
+}
+</script>
+</body>
+</html>

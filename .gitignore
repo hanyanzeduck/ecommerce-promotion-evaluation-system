@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Local runtime state and secrets
+backend/users.json
+.env
+
+# Downloaded source datasets and generated outputs
+data/raw/
+outputs/
+*.zip
+
+# Notebook and operating-system metadata
+.ipynb_checkpoints/
+.DS_Store
+Thumbs.db

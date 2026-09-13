@@ -1,0 +1,451 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>单用户画像查询 · 电商促销评估系统</title>
+<style>
+  :root{--bg:#f0f4fa;--surface:#ffffff;--card:#ffffff;--border:#e2e8f0;
+    --accent:#4f8ef7;--accent2:#3ecf8e;--accent3:#f7c948;--accent4:#f87168;
+    --text:#1a2540;--muted:#64748b;
+    --font:'Microsoft YaHei','PingFang SC','微软雅黑',sans-serif;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:#f8faff;color:#1a2540;font-family:var(--font);min-height:100vh;}
+  .topbar{display:flex;align-items:center;justify-content:space-between;
+    padding:0 28px;height:56px;background:rgba(255,255,255,.95);
+    border-bottom:1px solid #e2e8f0;position:sticky;top:0;z-index:100;
+    box-shadow:0 1px 10px rgba(100,120,160,.08);backdrop-filter:blur(12px);}
+  .logo{display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit;}
+  .logo-icon{width:30px;height:30px;background:var(--accent);border-radius:8px;
+    display:flex;align-items:center;justify-content:center;font-size:16px;}
+  .logo-text{font-size:15px;font-weight:700;}
+  .logo-sub{font-size:11px;color:#64748b;margin-top:1px;}
+  .nav{display:flex;gap:4px;}
+  .nav a{padding:6px 14px;border-radius:6px;font-size:13px;font-weight:500;
+    text-decoration:none;color:#64748b;transition:all .2s;}
+  .nav a:hover{color:#1a2540;background:#f1f5fd;}
+  .nav a.active{color:var(--accent);background:rgba(79,142,247,.12);}
+  .topbar-right{display:flex;align-items:center;gap:10px;}
+  .status-dot{width:8px;height:8px;border-radius:50%;background:#666;
+    display:inline-block;margin-right:4px;transition:background .3s;}
+  .status-dot.ok{background:var(--accent2);box-shadow:0 0 6px var(--accent2);}
+  .status-dot.err{background:var(--accent4);}
+  .status-text{font-size:11px;color:#64748b;}
+
+  .main{padding:28px 32px;max-width:900px;margin:0 auto;}
+  .page-header{margin-bottom:24px;}
+  .page-header h1{font-size:22px;font-weight:700;}
+  .page-header p{font-size:13px;color:#64748b;margin-top:6px;line-height:1.7;}
+  .back-btn{display:inline-flex;align-items:center;gap:6px;font-size:12px;
+    color:#64748b;text-decoration:none;padding:4px 10px;border-radius:6px;
+    border:1px solid var(--border);transition:all .2s;margin-bottom:16px;}
+  .back-btn:hover{color:var(--text);border-color:var(--accent);}
+
+  /* ─── 上传区 ─── */
+  .upload-panel{background:var(--card);border:1px solid var(--border);
+    border-radius:14px;padding:24px;margin-bottom:20px;border-left:4px solid var(--accent2);}
+  .upload-panel h3{font-size:15px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+  .drop-zone{border:2px dashed var(--border);border-radius:10px;padding:28px 20px;
+    text-align:center;cursor:pointer;transition:all .2s;background:#f8faff;}
+  .drop-zone:hover,.drop-zone.drag{border-color:var(--accent2);background:rgba(62,207,142,.05);}
+  .drop-zone.loaded{border-color:var(--accent2);background:rgba(62,207,142,.08);border-style:solid;}
+
+  .csv-status{display:none;margin-top:14px;padding:12px 16px;border-radius:8px;
+    background:rgba(62,207,142,.1);border:1px solid rgba(62,207,142,.25);
+    font-size:13px;font-weight:500;color:var(--accent2);}
+  .csv-status.err{background:rgba(248,113,104,.1);border-color:rgba(248,113,104,.25);color:var(--accent4);}
+
+  /* 字段说明小表 */
+  .schema-note{margin-top:16px;font-size:11px;color:#64748b;
+    background:rgba(79,142,247,.05);border:1px solid rgba(79,142,247,.15);
+    border-radius:8px;padding:12px 14px;line-height:1.9;}
+  .schema-note code{color:var(--accent2);background:rgba(62,207,142,.1);
+    padding:1px 5px;border-radius:3px;font-size:11px;}
+
+  /* ─── 查询区 ─── */
+  .search-panel{background:var(--card);border:1px solid var(--border);
+    border-radius:14px;padding:24px;border-left:4px solid var(--accent4);}
+  .search-panel h3{font-size:15px;font-weight:700;margin-bottom:16px;}
+  .search-row{display:flex;gap:12px;align-items:center;}
+  .search-input{flex:1;background:#f8faff;border:1px solid #e2e8f0;
+    color:var(--text);padding:10px 16px;border-radius:8px;font-size:15px;
+    font-family:var(--font);transition:border-color .2s;}
+  .search-input:focus{outline:none;border-color:var(--accent4);box-shadow:0 0 0 2px rgba(248,113,104,.12);}
+  .search-input:disabled{opacity:.45;cursor:not-allowed;}
+  .search-btn{background:var(--accent4);color:#fff;border:none;padding:10px 24px;
+    border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;
+    font-family:var(--font);transition:opacity .2s;white-space:nowrap;}
+  .search-btn:hover{opacity:.85;}
+  .search-btn:disabled{opacity:.4;cursor:not-allowed;}
+
+  /* 提示ID */
+  .hint-text{font-size:12px;color:#64748b;margin-top:10px;}
+  .hint-ids{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;}
+  .hint-id{padding:4px 10px;background:#f8faff;border:1px solid #e2e8f0;
+    border-radius:6px;font-size:12px;cursor:pointer;transition:all .2s;}
+  .hint-id:hover{border-color:var(--accent4);color:var(--accent4);}
+
+  /* 查询结果卡片 */
+  .profile-card{background:#f8faff;border:1px solid #e2e8f0;
+    border-radius:12px;padding:24px;margin-top:20px;display:none;}
+  .profile-card.show{display:block;}
+  .pc-header{display:flex;align-items:center;gap:16px;margin-bottom:20px;
+    padding-bottom:16px;border-bottom:1px solid var(--border);}
+  .pc-uid{font-size:24px;font-weight:700;}
+  .pc-tier{padding:5px 14px;border-radius:20px;font-size:12px;font-weight:700;}
+  .pc-tier.high{background:rgba(62,207,142,.15);color:var(--accent2);}
+  .pc-tier.mid{background:rgba(247,201,72,.15);color:var(--accent3);}
+  .pc-tier.low{background:rgba(248,113,104,.15);color:var(--accent4);}
+  .pc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+  .pc-metric{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:14px;}
+  .pc-metric-label{font-size:10px;color:#64748b;font-weight:500;letter-spacing:.5px;}
+  .pc-metric-value{font-size:22px;font-weight:700;margin-top:4px;}
+  .pc-metric-sub{font-size:11px;color:#64748b;margin-top:2px;}
+
+  .footer{margin-top:40px;padding:16px 0;border-top:1px solid var(--border);
+    font-size:11px;color:#64748b;display:flex;justify-content:space-between;}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+  .fade{animation:fadeUp .5s ease both;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="logo" href="/">
+    <div class="logo-icon">📊</div>
+    <div><div class="logo-text">电商促销评估系统</div>
+    <div class="logo-sub">E-Commerce Promotion Analytics</div></div>
+  </a>
+  <nav class="nav">
+    <a href="/">🏠 首页</a>
+    <a href="/user/predict">🔮 转化预测</a>
+    <a href="/user/batch">📤 批量分析</a>
+    <a href="/user/profile" class="active">🔍 用户查询</a>
+    <a href="/promo/overview">🎯 KPI总览</a>
+    <a href="/promo/funnel">📉 转化漏斗</a>
+    <a href="/promo/trend">📊 销售趋势</a>
+    <a href="/promo/ate">⚖️ ATE对比</a>
+    <a href="/user/segments">🧩 用户分群</a>
+    <a href="/user/rfm">💎 RFM分布</a>
+  </nav>
+    <a href="/user/profile" class="active">🔍 用户查询</a>
+  </nav>
+  <div class="topbar-right">
+    <span class="status-dot" id="statusDot"></span>
+    <span class="status-text" id="statusText">连接中...</span>
+    <span id="topbar-user" style="font-size:12px;color:#64748b;margin-left:6px;"></span>
+    <button onclick="logout()" style="padding:5px 14px;border-radius:6px;
+      border:1px solid #e2e8f0;background:transparent;color:#64748b;
+      font-size:13px;cursor:pointer;font-family:var(--font);">退出登录</button>
+  </div>
+</div>
+
+<div class="main">
+  <a class="back-btn" href="/">← 返回首页</a>
+
+  <div class="page-header fade">
+    <h1>🔍 单用户画像查询</h1>
+    <p>先上传包含用户数据的 CSV 文件，再输入用户ID即可即时查询该用户的完整 RFM 特征、价值等级、偏好品类及转化信息。所有数据仅在浏览器内存中处理，不上传服务器。</p>
+  </div>
+
+  <!-- STEP 1：上传 CSV -->
+  <div class="upload-panel fade">
+    <h3>
+      <span style="background:var(--accent2);color:#ffffff;width:20px;height:20px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;">1</span>
+      上传用户数据 CSV
+    </h3>
+
+    <div class="drop-zone" id="dropZone"
+      onclick="document.getElementById('csvFileInput').click()"
+      ondragover="event.preventDefault();this.classList.add('drag')"
+      ondragleave="this.classList.remove('drag')"
+      ondrop="handleDrop(event)">
+      <div style="font-size:32px;margin-bottom:10px">📁</div>
+      <div style="font-size:14px;font-weight:600" id="dropZoneText">点击选择文件 或 拖拽 CSV 文件到此处</div>
+      <div style="font-size:12px;color:#64748b;margin-top:4px">支持任意行数的用户数据 CSV</div>
+      <input type="file" id="csvFileInput" accept=".csv" style="display:none" onchange="handleFile(this.files[0])">
+    </div>
+
+    <div class="csv-status" id="csvStatus"></div>
+
+    <div class="schema-note">
+      <strong style="color:var(--accent3)">📋 所需字段（列名需一致）：</strong><br>
+      <code>用户ID</code> 用户唯一标识 &nbsp;·&nbsp;
+      <code>cnt_pv</code> 浏览次数 &nbsp;·&nbsp;
+      <code>cnt_fav</code> 收藏次数 &nbsp;·&nbsp;
+      <code>cnt_buy</code> 购买次数（有则读取，无则计算转化）&nbsp;·&nbsp;
+      <code>monetary</code> 消费金额 &nbsp;·&nbsp;
+      <code>recency</code> 距上次购买天数 &nbsp;·&nbsp;
+      <code>frequency</code> 购买频次 &nbsp;·&nbsp;
+      <code>fav_category_code</code> 偏好品类 &nbsp;·&nbsp;
+      <code>active_days</code> 活跃天数 &nbsp;·&nbsp;
+      <code>peak_hour</code> 高峰时段
+    </div>
+  </div>
+
+  <!-- STEP 2：查询 -->
+  <div class="search-panel fade">
+    <h3>
+      <span style="background:var(--accent4);color:#fff;width:20px;height:20px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;">2</span>
+      输入用户 ID 查询画像
+    </h3>
+    <div class="search-row">
+      <input class="search-input" type="text" id="userIdInput"
+        placeholder="请先上传 CSV，再输入用户ID查询"
+        disabled
+        onkeydown="if(event.key==='Enter')lookupUser()">
+      <button class="search-btn" id="searchBtn" onclick="lookupUser()" disabled>查询</button>
+    </div>
+
+    <div class="hint-text" id="hintArea" style="display:none;">
+      CSV 中的示例 ID（点击快速填入）：
+      <div class="hint-ids" id="hintIds"></div>
+    </div>
+
+    <!-- 查询结果卡片 -->
+    <div class="profile-card" id="profileCard">
+      <div id="profileContent" style="color:#64748b">输入用户ID后点击查询</div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <span>数据来源：WA Marketing Campaign · UserBehavior_2025 · 日志行为数据</span>
+    <span>论文：电商促销活动效果评估与用户转化率预测模型评估系统 · 韩颜泽 · 2026</span>
+  </div>
+</div>
+
+<script>
+const C = {accent:'#4f8ef7',accent2:'#3ecf8e',accent3:'#f7c948',accent4:'#f87168',
+           muted:'#8b949e',border:'#30363d',text:'#e6edf3'};
+const CAT_MAP = {0:'家居用品',1:'家用电器',2:'服装鞋帽',3:'美妆护肤',4:'食品饮料',5:'电子产品'};
+const ROLE_LABEL = { admin:'管理员', analyst:'分析师', viewer:'访客' };
+
+// ── 登录检查 ──
+fetch('/api/auth/status').then(r=>r.json()).then(res=>{
+  if(!res.data||!res.data.logged_in){location.href='/login';return;}
+  const {username,role}=res.data;
+  document.getElementById('topbar-user').textContent=`👤 ${username} · ${ROLE_LABEL[role]||role}`;
+});
+function logout(){fetch('/api/logout',{method:'POST'}).then(()=>location.href='/login');}
+
+// 后端连接状态（可选）
+(async()=>{
+  try{
+    const res=await fetch('/api/health',{signal:AbortSignal.timeout(3000)});
+    const d=await res.json();
+    if(d.code===0){
+      document.getElementById('statusDot').className='status-dot ok';
+      document.getElementById('statusText').textContent='后端已连接';
+    }
+  }catch{
+    document.getElementById('statusDot').className='status-dot err';
+    document.getElementById('statusText').textContent='后端未连接（查询使用本地CSV）';
+  }
+})();
+
+// ── CSV 解析核心 ──
+let csvData = {};  // { uid_string: { ...字段 } }
+
+function handleDrop(e){
+  e.preventDefault();
+  document.getElementById('dropZone').classList.remove('drag');
+  const f = e.dataTransfer.files[0];
+  if(f) handleFile(f);
+}
+
+function handleFile(file){
+  if(!file || !file.name.endsWith('.csv')){
+    showCsvStatus('err', '⚠️ 请上传 .csv 格式文件');
+    return;
+  }
+  showCsvStatus('', '⏳ 正在解析文件...');
+  const reader = new FileReader();
+  reader.onload = e => parseCSV(e.target.result, file.name);
+  reader.readAsText(file, 'UTF-8');
+}
+
+function parseCSV(text, filename){
+  const lines = text.replace(/\r\n/g,'\n').replace(/\r/g,'\n').split('\n').filter(l=>l.trim());
+  if(lines.length < 2){showCsvStatus('err','⚠️ 文件内容为空或格式不正确');return;}
+
+  // 解析表头
+  const sep = lines[0].includes('\t') ? '\t' : ',';
+  const headers = lines[0].split(sep).map(h=>h.trim().replace(/^"|"$/g,''));
+
+  // 找用户ID列（兼容多种列名）
+  const uidCol = headers.findIndex(h=>/^(用户id|用户ID|userid|user_id|uid)$/i.test(h));
+  if(uidCol === -1){showCsvStatus('err','⚠️ 找不到用户ID列，请确保列名为「用户ID」或「user_id」');return;}
+
+  csvData = {};
+  let loaded = 0;
+  for(let i=1;i<lines.length;i++){
+    const cols = splitCSVLine(lines[i], sep);
+    if(cols.length < 2) continue;
+    const uid = cols[uidCol]?.trim().replace(/^"|"$/g,'');
+    if(!uid) continue;
+    const row = {};
+    headers.forEach((h,idx)=>{
+      const val = (cols[idx]||'').trim().replace(/^"|"$/g,'');
+      row[h] = isNaN(val)||val==='' ? val : Number(val);
+    });
+    csvData[uid] = row;
+    loaded++;
+  }
+
+  if(loaded === 0){showCsvStatus('err','⚠️ 解析后无有效数据行');return;}
+
+  // 成功
+  showCsvStatus('ok', `✅ 已加载 ${loaded.toLocaleString()} 条用户数据 — ${filename}`);
+  document.getElementById('dropZone').classList.add('loaded');
+  document.getElementById('dropZoneText').textContent = `已加载：${filename}（${loaded.toLocaleString()} 条）`;
+
+  // 启用查询
+  document.getElementById('userIdInput').disabled = false;
+  document.getElementById('userIdInput').placeholder = '输入用户ID，例如：' + Object.keys(csvData)[0];
+  document.getElementById('searchBtn').disabled = false;
+
+  // 显示示例ID（取前5个）
+  const sampleIds = Object.keys(csvData).slice(0, 5);
+  document.getElementById('hintArea').style.display = 'block';
+  document.getElementById('hintIds').innerHTML = sampleIds.map(id=>
+    `<span class="hint-id" onclick="quickLookup('${id}')">${id}</span>`
+  ).join('');
+}
+
+// 简单 CSV 行分割（处理引号内的逗号）
+function splitCSVLine(line, sep){
+  if(sep===','){
+    const result=[];let cur='';let inQ=false;
+    for(let i=0;i<line.length;i++){
+      const c=line[i];
+      if(c==='"'){inQ=!inQ;}
+      else if(c===','&&!inQ){result.push(cur);cur='';}
+      else{cur+=c;}
+    }
+    result.push(cur);
+    return result;
+  }
+  return line.split(sep);
+}
+
+function showCsvStatus(type, msg){
+  const el = document.getElementById('csvStatus');
+  el.style.display = 'block';
+  el.className = 'csv-status' + (type==='err'?' err':'');
+  el.textContent = msg;
+}
+
+// ── 查询逻辑 ──
+function quickLookup(id){
+  document.getElementById('userIdInput').value = id;
+  lookupUser();
+}
+
+function lookupUser(){
+  const uid = String(document.getElementById('userIdInput').value).trim();
+  if(!uid) return;
+
+  const card = document.getElementById('profileCard');
+  const content = document.getElementById('profileContent');
+  card.className = 'profile-card show';
+
+  if(Object.keys(csvData).length === 0){
+    content.innerHTML='<span style="color:var(--accent3)">⚠️ 请先上传 CSV 文件，再查询用户画像。</span>';
+    return;
+  }
+
+  const row = csvData[uid];
+  if(!row){
+    content.innerHTML=`
+      <div style="color:var(--accent4);font-weight:600">❌ 未找到用户 ID：${uid}</div>
+      <div style="font-size:12px;color:#64748b;margin-top:6px">
+        请检查ID是否正确，当前文件共 ${Object.keys(csvData).length.toLocaleString()} 条用户数据。
+      </div>`;
+    return;
+  }
+
+  // 计算 RFM 指标
+  const recency   = row['recency']   !== undefined ? row['recency']   : '—';
+  const frequency = row['frequency'] !== undefined ? row['frequency'] : (row['cnt_buy'] || '—');
+  const monetary  = row['monetary']  !== undefined ? row['monetary']  : '—';
+  const catCode   = row['fav_category_code'] !== undefined ? row['fav_category_code'] : null;
+  const favCat    = catCode !== null ? (CAT_MAP[catCode] || `品类${catCode}`) : '—';
+  const activeDays= row['active_days'] !== undefined ? row['active_days'] : '—';
+  const peakHour  = row['peak_hour']   !== undefined ? row['peak_hour']   : '—';
+  const converted = row['converted']   !== undefined ? !!row['converted'] :
+                    (row['cnt_buy']    !== undefined ? row['cnt_buy'] > 0 : null);
+
+  // RFM 评分（简化：recency 越小越好；frequency/monetary 越大越好）
+  let rfmScore = '—', rfmTier = '中价值', tierClass = 'mid';
+  if(recency !== '—' && frequency !== '—' && monetary !== '—'){
+    const rScore = recency <= 7 ? 3 : recency <= 30 ? 2 : 1;
+    const fScore = frequency >= 5 ? 3 : frequency >= 2 ? 2 : 1;
+    const mScore = monetary >= 1000 ? 3 : monetary >= 200 ? 2 : 1;
+    rfmScore = rScore + fScore + mScore;
+    if(rfmScore >= 8){rfmTier='高价值';tierClass='high';}
+    else if(rfmScore >= 5){rfmTier='中价值';tierClass='mid';}
+    else{rfmTier='低价值';tierClass='low';}
+  }
+
+  const tierColor = rfmTier==='高价值' ? C.accent2 : rfmTier==='中价值' ? C.accent3 : C.accent4;
+  const convStr   = converted===null ? '—' : converted ? '✓ 已购买' : '✗ 未购买';
+  const convColor = converted===null ? C.muted : converted ? C.accent2 : C.accent4;
+  const moneyStr  = monetary !== '—' ? `¥${Number(monetary).toLocaleString()}` : '—';
+
+  content.innerHTML = `
+    <div class="pc-header">
+      <div>
+        <div style="font-size:11px;color:#64748b;font-weight:500">用户 ID</div>
+        <div class="pc-uid">👤 ${uid}</div>
+      </div>
+      <div class="pc-tier ${tierClass}">${rfmTier}</div>
+      <div style="margin-left:auto;text-align:right">
+        <div style="font-size:11px;color:#64748b">购买状态</div>
+        <div style="font-size:22px;font-weight:700;color:${convColor}">${convStr}</div>
+        <div style="font-size:11px;color:#64748b;margin-top:2px">RFM综合评分：${rfmScore}</div>
+      </div>
+    </div>
+    <div class="pc-grid">
+      <div class="pc-metric" style="border-top:3px solid ${C.accent}">
+        <div class="pc-metric-label">RECENCY · 最近购买</div>
+        <div class="pc-metric-value" style="color:${C.accent}">${recency !== '—' ? recency+'天' : '—'}</div>
+        <div class="pc-metric-sub">距上次购买天数</div>
+      </div>
+      <div class="pc-metric" style="border-top:3px solid ${C.accent2}">
+        <div class="pc-metric-label">FREQUENCY · 购买频次</div>
+        <div class="pc-metric-value" style="color:${C.accent2}">${frequency !== '—' ? frequency+'次' : '—'}</div>
+        <div class="pc-metric-sub">历史购买次数</div>
+      </div>
+      <div class="pc-metric" style="border-top:3px solid ${C.accent3}">
+        <div class="pc-metric-label">MONETARY · 消费金额</div>
+        <div class="pc-metric-value" style="color:${C.accent3}">${moneyStr}</div>
+        <div class="pc-metric-sub">历史累计消费</div>
+      </div>
+      <div class="pc-metric" style="border-top:3px solid ${tierColor}">
+        <div class="pc-metric-label">RFM 综合评分</div>
+        <div class="pc-metric-value" style="color:${tierColor}">${rfmScore}</div>
+        <div class="pc-metric-sub">${rfmTier}</div>
+      </div>
+      <div class="pc-metric" style="border-top:3px solid #a78bfa">
+        <div class="pc-metric-label">偏好品类</div>
+        <div class="pc-metric-value" style="color:#a78bfa;font-size:16px;">${favCat}</div>
+        <div class="pc-metric-sub">最常购买品类</div>
+      </div>
+      <div class="pc-metric" style="border-top:3px solid #22d3ee">
+        <div class="pc-metric-label">活跃天数 / 高峰时段</div>
+        <div class="pc-metric-value" style="color:#22d3ee;font-size:16px;">
+          ${activeDays !== '—' ? activeDays+'天' : '—'} / ${peakHour !== '—' ? peakHour+'时' : '—'}
+        </div>
+        <div class="pc-metric-sub">统计周期内活跃状况</div>
+      </div>
+    </div>
+    <div style="margin-top:16px;padding:10px 14px;background:rgba(79,142,247,.06);border-radius:8px;
+      font-size:12px;color:#64748b;border:1px solid rgba(79,142,247,.12);">
+      📌 来自上传文件的原始字段值：
+      ${Object.entries(row).slice(0,10).map(([k,v])=>`<code style="color:var(--accent3);background:rgba(247,201,72,.08);padding:1px 5px;border-radius:3px;margin:2px">${k}: ${v}</code>`).join(' ')}
+    </div>
+  `;
+}
+</script>
+</body>
+</html>

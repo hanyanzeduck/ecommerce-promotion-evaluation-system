@@ -1,0 +1,255 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>实时转化率预测 · 电商促销评估系统</title>
+<style>
+  :root{--bg:#f0f4fa;--surface:#ffffff;--card:#ffffff;--border:#e2e8f0;
+    --accent:#4f8ef7;--accent2:#3ecf8e;--accent3:#f7c948;--accent4:#f87168;
+    --text:#1a2540;--muted:#64748b;
+    --font:'Microsoft YaHei','PingFang SC','微软雅黑',sans-serif;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:#f8faff;color:#1a2540;font-family:var(--font);min-height:100vh;}
+  .topbar{display:flex;align-items:center;justify-content:space-between;
+    padding:0 28px;height:56px;background:rgba(255,255,255,.95);
+    border-bottom:1px solid #e2e8f0;position:sticky;top:0;z-index:100;
+    box-shadow:0 1px 10px rgba(100,120,160,.08);backdrop-filter:blur(12px);}
+  .logo{display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit;}
+  .logo-icon{width:30px;height:30px;background:var(--accent);border-radius:8px;
+    display:flex;align-items:center;justify-content:center;font-size:16px;}
+  .logo-text{font-size:15px;font-weight:700;}
+  .logo-sub{font-size:11px;color:#64748b;margin-top:1px;}
+  .nav{display:flex;gap:4px;}
+  .nav a{padding:6px 14px;border-radius:6px;font-size:13px;font-weight:500;
+    text-decoration:none;color:#64748b;transition:all .2s;}
+  .nav a:hover{color:#1a2540;background:#f1f5fd;}
+  .nav a.active{color:var(--accent);background:rgba(79,142,247,.12);}
+  .topbar-right{display:flex;align-items:center;gap:10px;}
+  .status-dot{width:8px;height:8px;border-radius:50%;background:#666;
+    display:inline-block;margin-right:4px;transition:background .3s;}
+  .status-dot.ok{background:var(--accent2);box-shadow:0 0 6px var(--accent2);}
+  .status-dot.err{background:var(--accent4);}
+  .status-text{font-size:11px;color:#64748b;}
+
+  .main{padding:28px 32px;max-width:900px;margin:0 auto;}
+  .page-header{margin-bottom:24px;}
+  .page-header h1{font-size:22px;font-weight:700;}
+  .page-header p{font-size:13px;color:#64748b;margin-top:6px;line-height:1.7;}
+  .back-btn{display:inline-flex;align-items:center;gap:6px;font-size:12px;
+    color:#64748b;text-decoration:none;padding:4px 10px;border-radius:6px;
+    border:1px solid var(--border);transition:all .2s;margin-bottom:16px;}
+  .back-btn:hover{color:var(--text);border-color:var(--accent);}
+
+  .predict-panel{background:var(--card);border:1px solid var(--border);
+    border-radius:14px;padding:28px;border-left:4px solid var(--accent);}
+  .predict-panel h3{font-size:16px;font-weight:700;margin-bottom:18px;
+    display:flex;align-items:center;gap:8px;}
+  .predict-form{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:18px;}
+  .form-field label{display:block;font-size:11px;color:#64748b;margin-bottom:5px;font-weight:500;}
+  .form-field input{width:100%;background:#f8faff;border:1px solid #e2e8f0;
+    color:var(--text);padding:8px 12px;border-radius:8px;font-size:14px;
+    font-family:var(--font);transition:border-color .2s;}
+  .form-field input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 2px rgba(79,142,247,.15);}
+  .predict-btn{background:var(--accent);color:#fff;border:none;padding:10px 28px;
+    border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;
+    font-family:var(--font);transition:opacity .2s;}
+  .predict-btn:hover{opacity:.85;}
+  .predict-btn:active{transform:scale(.98);}
+  .predict-result{display:none;margin-top:20px;padding:20px;background:#f8faff;
+    border-radius:10px;border:1px solid var(--border);}
+  .predict-result.show{display:flex;gap:24px;align-items:center;flex-wrap:wrap;}
+  .result-prob{font-size:48px;font-weight:700;line-height:1;}
+  .result-label{font-size:13px;padding:5px 14px;border-radius:20px;font-weight:600;}
+  .result-label.high{background:rgba(62,207,142,.15);color:var(--accent2);}
+  .result-label.mid{background:rgba(247,201,72,.15);color:var(--accent3);}
+  .result-label.low{background:rgba(248,113,104,.15);color:var(--accent4);}
+  .result-suggest{font-size:13px;color:#64748b;margin-top:8px;}
+
+  /* 特征说明表 */
+  .feature-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:20px;}
+  .feature-table th{background:rgba(79,142,247,.08);color:var(--accent);padding:8px 12px;
+    text-align:left;font-weight:600;border-bottom:1px solid var(--border);}
+  .feature-table td{padding:8px 12px;border-bottom:1px solid #f0f4fa;color:#1a2540;}
+  .feature-table tr:hover td{background:rgba(79,142,247,.02);}
+  .weight-bar{display:inline-block;height:6px;border-radius:3px;
+    background:var(--accent);vertical-align:middle;margin-right:6px;}
+
+  .footer{margin-top:40px;padding:16px 0;border-top:1px solid var(--border);
+    font-size:11px;color:#64748b;display:flex;justify-content:space-between;}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+  .fade{animation:fadeUp .5s ease both;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="logo" href="/">
+    <div class="logo-icon">📊</div>
+    <div><div class="logo-text">电商促销评估系统</div>
+    <div class="logo-sub">E-Commerce Promotion Analytics</div></div>
+  </a>
+  <nav class="nav">
+    <a href="/">🏠 首页</a>
+    <a href="/user/predict" class="active">🔮 转化预测</a>
+    <a href="/user/batch">📤 批量分析</a>
+    <a href="/user/profile">🔍 用户查询</a>
+    <a href="/promo/overview">🎯 KPI总览</a>
+    <a href="/promo/funnel">📉 转化漏斗</a>
+    <a href="/promo/trend">📊 销售趋势</a>
+    <a href="/promo/ate">⚖️ ATE对比</a>
+    <a href="/user/segments">🧩 用户分群</a>
+    <a href="/user/rfm">💎 RFM分布</a>
+  </nav>
+  <div class="topbar-right">
+    <span class="status-dot" id="statusDot"></span>
+    <span class="status-text" id="statusText">连接中...</span>
+    <span id="topbar-user" style="font-size:12px;color:#64748b;margin-left:6px;"></span>
+    <button onclick="logout()" style="padding:5px 14px;border-radius:6px;
+      border:1px solid #e2e8f0;background:transparent;color:#64748b;
+      font-size:13px;cursor:pointer;font-family:var(--font);">退出登录</button>
+  </div>
+</div>
+
+<div class="main">
+  <a class="back-btn" href="/">← 返回首页</a>
+
+  <div class="page-header fade">
+    <h1>🔮 实时单用户转化率预测</h1>
+    <p>输入用户6项行为特征，XGBoost 模型（AUC=0.96）实时返回转化概率与运营建议，支持高/中/低三档分层。</p>
+  </div>
+
+  <div class="predict-panel fade">
+    <h3>⚡ 输入用户特征
+      <span style="font-size:11px;color:#64748b;font-weight:400">— 填写下方6项指标，点击预测</span>
+    </h3>
+    <div class="predict-form">
+      <div class="form-field">
+        <label>浏览次数 (cnt_pv) <span style="color:var(--accent3)">#1 权重36.5%</span></label>
+        <input type="number" id="f-pv" value="5" min="0" placeholder="浏览商品页次数">
+      </div>
+      <div class="form-field">
+        <label>收藏次数 (cnt_fav)</label>
+        <input type="number" id="f-fav" value="2" min="0" placeholder="加入收藏次数">
+      </div>
+      <div class="form-field">
+        <label>品类编码 (0~5) <span style="color:#64748b">0=家居 1=电器 2=服装 3=美妆 4=食品 5=电子</span></label>
+        <input type="number" id="f-cat" value="1" min="0" max="5">
+      </div>
+      <div class="form-field">
+        <label>活跃天数</label>
+        <input type="number" id="f-days" value="3" min="0" placeholder="有行为记录的天数">
+      </div>
+      <div class="form-field">
+        <label>高峰时段 (0~23)</label>
+        <input type="number" id="f-hour" value="20" min="0" max="23" placeholder="最活跃的小时">
+      </div>
+      <div class="form-field">
+        <label>周末活跃占比 (0~1)</label>
+        <input type="number" id="f-wknd" value="0.4" step="0.1" min="0" max="1">
+      </div>
+    </div>
+    <button class="predict-btn" onclick="runPredict()">🔮 预测转化概率</button>
+    <div class="predict-result" id="predictResult"></div>
+  </div>
+
+  <!-- 特征权重说明 -->
+  <div style="margin-top:20px;" class="fade">
+    <div style="font-size:14px;font-weight:600;margin-bottom:12px;color:var(--text)">📊 XGBoost 模型特征重要性</div>
+    <table class="feature-table">
+      <thead><tr><th>特征</th><th>中文含义</th><th>重要性</th><th>取值范围</th></tr></thead>
+      <tbody>
+        <tr><td><code style="color:var(--accent2)">cnt_pv</code></td><td>浏览次数</td>
+          <td><span class="weight-bar" style="width:73px"></span>36.5%</td><td>0 ~ 无上限</td></tr>
+        <tr><td><code style="color:var(--accent2)">cnt_fav</code></td><td>收藏次数</td>
+          <td><span class="weight-bar" style="width:54px"></span>26.8%</td><td>0 ~ 无上限</td></tr>
+        <tr><td><code style="color:var(--accent2)">active_days</code></td><td>活跃天数</td>
+          <td><span class="weight-bar" style="width:40px"></span>19.7%</td><td>0 ~ 7</td></tr>
+        <tr><td><code style="color:var(--accent2)">fav_category_code</code></td><td>偏好品类</td>
+          <td><span class="weight-bar" style="width:16px"></span>8.2%</td><td>0 ~ 5</td></tr>
+        <tr><td><code style="color:var(--accent2)">weekend_pct</code></td><td>周末活跃占比</td>
+          <td><span class="weight-bar" style="width:14px"></span>5.6%</td><td>0.0 ~ 1.0</td></tr>
+        <tr><td><code style="color:var(--accent2)">peak_hour</code></td><td>高峰活跃时段</td>
+          <td><span class="weight-bar" style="width:6px"></span>3.2%</td><td>0 ~ 23</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="footer">
+    <span>数据来源：WA Marketing Campaign · UserBehavior_2025 · 日志行为数据</span>
+    <span>论文：电商促销活动效果评估与用户转化率预测模型评估系统 · 韩颜泽 · 2026</span>
+  </div>
+</div>
+
+<script>
+const API = 'http://localhost:5000/api';
+const ROLE_LABEL = { admin:'管理员', analyst:'分析师', viewer:'访客' };
+
+fetch('/api/auth/status').then(r=>r.json()).then(res=>{
+  if(!res.data||!res.data.logged_in){location.href='/login';return;}
+  const {username,role}=res.data;
+  document.getElementById('topbar-user').textContent=`👤 ${username} · ${ROLE_LABEL[role]||role}`;
+});
+function logout(){fetch('/api/logout',{method:'POST'}).then(()=>location.href='/login');}
+
+(async()=>{
+  try{
+    const res=await fetch(`${API}/health`,{signal:AbortSignal.timeout(3000)});
+    const d=await res.json();
+    if(d.code===0){
+      document.getElementById('statusDot').className='status-dot ok';
+      document.getElementById('statusText').textContent=`后端已连接 · 模型${d.data.model_loaded?'已加载':'未加载'}`;
+    }
+  }catch{document.getElementById('statusDot').className='status-dot err';document.getElementById('statusText').textContent='后端未连接';}
+})();
+
+async function runPredict(){
+  const C={accent2:'#3ecf8e',accent3:'#f7c948',accent4:'#f87168'};
+  const payload={
+    cnt_pv:           parseFloat(document.getElementById('f-pv').value)||0,
+    cnt_fav:          parseFloat(document.getElementById('f-fav').value)||0,
+    fav_category_code:parseFloat(document.getElementById('f-cat').value)||0,
+    active_days:      parseFloat(document.getElementById('f-days').value)||0,
+    peak_hour:        parseFloat(document.getElementById('f-hour').value)||0,
+    weekend_pct:      parseFloat(document.getElementById('f-wknd').value)||0,
+  };
+  const resultEl=document.getElementById('predictResult');
+  resultEl.className='predict-result show';
+  resultEl.innerHTML='<span style="color:#64748b">🔄 预测中，请稍候...</span>';
+  try{
+    const res=await fetch(`${API}/predict`,{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(payload),signal:AbortSignal.timeout(5000)});
+    const json=await res.json();
+    if(json.code!==0)throw new Error(json.message);
+    const d=json.data;
+    const tier=d.convert_prob>=0.7?'high':(d.convert_prob>=0.4?'mid':'low');
+    const color=tier==='high'?C.accent2:tier==='mid'?C.accent3:C.accent4;
+    resultEl.innerHTML=`
+      <div>
+        <div class="result-prob" style="color:${color}">${d.convert_prob_pct}</div>
+        <div style="font-size:12px;color:#64748b;margin-top:4px">转化概率</div>
+      </div>
+      <div>
+        <div class="result-label ${tier}">${d.label}</div>
+        <div class="result-suggest" style="margin-top:10px">💡 ${d.suggestion}</div>
+      </div>
+      <div style="flex:1;background:var(--card);border-radius:8px;padding:12px;min-width:200px;">
+        <div style="font-size:11px;color:#64748b;margin-bottom:6px">转化概率 gauge</div>
+        <div style="height:8px;background:var(--border);border-radius:4px;overflow:hidden;">
+          <div style="height:100%;width:${d.convert_prob_pct};background:${color};border-radius:4px;transition:width .8s;"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:#64748b;margin-top:4px">
+          <span>低风险 0%</span><span>100% 必购</span>
+        </div>
+      </div>
+    `;
+  }catch(e){
+    resultEl.innerHTML=`
+      <div style="color:var(--accent4)">⚠️ 预测失败：${e.message}</div>
+      <div style="font-size:11px;color:#64748b;margin-top:6px">请确认后端服务已启动（python app.py）</div>
+    `;
+  }
+}
+</script>
+</body>
+</html>

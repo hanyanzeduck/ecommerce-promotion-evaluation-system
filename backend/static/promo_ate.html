@@ -1,0 +1,255 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ATE 因果效应 · 电商促销评估系统</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
+<style>
+  :root{--bg:#f0f4fa;--surface:#ffffff;--card:#ffffff;--border:#e2e8f0;
+    --accent:#4f8ef7;--accent2:#3ecf8e;--accent3:#f7c948;--accent4:#f87168;
+    --text:#1a2540;--muted:#64748b;
+    --font:'Microsoft YaHei','PingFang SC','微软雅黑',sans-serif;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:#f8faff;color:#1a2540;font-family:var(--font);min-height:100vh;}
+  .topbar{display:flex;align-items:center;justify-content:space-between;
+    padding:0 28px;height:56px;background:rgba(255,255,255,.95);
+    border-bottom:1px solid #e2e8f0;position:sticky;top:0;z-index:100;
+    box-shadow:0 1px 10px rgba(100,120,160,.08);backdrop-filter:blur(12px);}
+  .logo{display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit;}
+  .logo-icon{width:30px;height:30px;background:var(--accent);border-radius:8px;
+    display:flex;align-items:center;justify-content:center;font-size:16px;}
+  .logo-text{font-size:15px;font-weight:700;}
+  .logo-sub{font-size:11px;color:#64748b;margin-top:1px;}
+  .nav{display:flex;gap:4px;}
+  .nav a{padding:6px 14px;border-radius:6px;font-size:13px;font-weight:500;
+    text-decoration:none;color:#64748b;transition:all .2s;}
+  .nav a:hover{color:#1a2540;background:#f1f5fd;}
+  .nav a.active{color:var(--accent);background:rgba(79,142,247,.12);}
+  .topbar-right{display:flex;align-items:center;gap:10px;}
+  .status-dot{width:8px;height:8px;border-radius:50%;background:#666;
+    display:inline-block;margin-right:4px;transition:background .3s;}
+  .status-dot.ok{background:var(--accent2);box-shadow:0 0 6px var(--accent2);}
+  .status-dot.err{background:var(--accent4);}
+  .status-text{font-size:11px;color:#64748b;}
+
+  .main{padding:28px 32px;max-width:1200px;margin:0 auto;}
+  .page-header{margin-bottom:24px;}
+  .page-header h1{font-size:22px;font-weight:700;}
+  .page-header p{font-size:13px;color:#64748b;margin-top:6px;line-height:1.7;}
+  .back-btn{display:inline-flex;align-items:center;gap:6px;font-size:12px;
+    color:#64748b;text-decoration:none;padding:4px 10px;border-radius:6px;
+    border:1px solid var(--border);transition:all .2s;margin-bottom:16px;}
+  .back-btn:hover{color:var(--text);border-color:var(--accent);}
+
+  .chart-card{background:var(--card);border:1px solid var(--border);
+    border-radius:12px;padding:24px;}
+  .chart-title{font-size:15px;font-weight:600;display:flex;align-items:center;gap:8px;}
+  .chart-title .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+  .chart-desc{font-size:12px;color:#64748b;margin-top:6px;line-height:1.7;}
+  .chart-desc .term{color:var(--accent3);font-weight:500;}
+  .insight-row{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;}
+  .insight-tag{font-size:11px;padding:4px 10px;border-radius:6px;font-weight:500;}
+  .insight-tag.green{background:rgba(62,207,142,.15);color:var(--accent2);}
+  .insight-tag.yellow{background:rgba(247,201,72,.15);color:var(--accent3);}
+  .insight-tag.blue{background:rgba(79,142,247,.15);color:var(--accent);}
+
+  .grid2{display:grid;grid-template-columns:1.2fr 1fr;gap:16px;}
+
+  /* 方法汇总表 */
+  .method-table{width:100%;border-collapse:collapse;margin-top:10px;font-size:12px;}
+  .method-table th{background:rgba(79,142,247,.1);color:var(--accent);
+    padding:10px 14px;text-align:left;font-weight:600;border-bottom:1px solid var(--border);}
+  .method-table td{padding:10px 14px;border-bottom:1px solid #f0f4fa;color:#1a2540;}
+  .method-table tr:hover td{background:rgba(79,142,247,.02);}
+  .sig-badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;}
+  .sig-badge.yes{background:rgba(62,207,142,.15);color:var(--accent2);}
+  .sig-badge.no{background:rgba(255,255,255,.08);color:#64748b;}
+
+  /* 方法解释卡片 */
+  .method-explain{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:20px;}
+  .me-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px;}
+  .me-name{font-size:13px;font-weight:700;margin-bottom:6px;}
+  .me-desc{font-size:11px;color:#64748b;line-height:1.6;}
+
+  .footer{margin-top:40px;padding:16px 0;border-top:1px solid var(--border);
+    font-size:11px;color:#64748b;display:flex;justify-content:space-between;}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+  .fade{animation:fadeUp .5s ease both;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="logo" href="/">
+    <div class="logo-icon">📊</div>
+    <div><div class="logo-text">电商促销评估系统</div>
+    <div class="logo-sub">E-Commerce Promotion Analytics</div></div>
+  </a>
+  <nav class="nav">
+    <a href="/">🏠 首页</a>
+    <a href="/user/predict">🔮 转化预测</a>
+    <a href="/user/batch">📤 批量分析</a>
+    <a href="/user/profile">🔍 用户查询</a>
+    <a href="/promo/overview">🎯 KPI总览</a>
+    <a href="/promo/funnel">📉 转化漏斗</a>
+    <a href="/promo/trend">📊 销售趋势</a>
+    <a href="/promo/ate" class="active">⚖️ ATE对比</a>
+    <a href="/user/segments">🧩 用户分群</a>
+    <a href="/user/rfm">💎 RFM分布</a>
+  </nav>
+  </nav>
+  <div class="topbar-right">
+    <span class="status-dot" id="statusDot"></span>
+    <span class="status-text" id="statusText">连接中...</span>
+    <span id="topbar-user" style="font-size:12px;color:#64748b;margin-left:6px;"></span>
+    <button onclick="logout()" style="padding:5px 14px;border-radius:6px;
+      border:1px solid #e2e8f0;background:transparent;color:#64748b;
+      font-size:13px;cursor:pointer;font-family:var(--font);">退出登录</button>
+  </div>
+</div>
+
+<div class="main">
+  <a class="back-btn" href="/">← 返回首页</a>
+
+  <div class="page-header fade">
+    <h1>⚖️ ATE 因果效应对比</h1>
+    <p>PSM、DiD、Uplift 三种因果推断方法的估计结果交叉验证，附显著性检验，排除"好门店效应"干扰。
+      三种方法结论方向一致，增强了结论的可信度。</p>
+  </div>
+
+  <div class="grid2 fade">
+    <!-- ATE柱状图 -->
+    <div class="chart-card">
+      <div class="chart-title">
+        <span class="dot" style="background:var(--accent3)"></span>各促销方案 ATE 因果效应对比
+      </div>
+      <div class="chart-desc">
+        <span class="term">ATE（Average Treatment Effect）</span>：控制门店规模、年龄等混淆变量后，
+        促销真正带来的额外销售额。<span style="color:var(--accent2)">绿色柱</span>表示统计显著，
+        <span style="color:#64748b">灰色柱</span>表示不显著。
+      </div>
+      <div id="ateChart" style="height:320px;margin-top:12px;"></div>
+      <div class="insight-row">
+        <span class="insight-tag green" id="psmInsight">PSM加载中...</span>
+        <span class="insight-tag yellow">DiD方向一致</span>
+      </div>
+    </div>
+
+    <!-- 方法汇总表 -->
+    <div class="chart-card">
+      <div class="chart-title">
+        <span class="dot" style="background:var(--accent4)"></span>三种因果推断方法结果汇总
+      </div>
+      <div class="chart-desc">
+        本研究采用 <span class="term">PSM</span>（倾向得分匹配）、<span class="term">DiD</span>（双重差分）、
+        <span class="term">Uplift</span>（提升模型）三种方法交叉验证，三者结论方向一致。
+      </div>
+      <table class="method-table" id="methodTable">
+        <thead><tr><th>方法</th><th>估计量</th><th>p值</th><th>显著性</th></tr></thead>
+        <tbody><tr><td colspan="4" style="color:#64748b;text-align:center">加载中...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 方法说明卡片 -->
+  <div class="method-explain fade">
+    <div class="me-card">
+      <div class="me-name" style="color:var(--accent2)">🎯 PSM（倾向得分匹配）</div>
+      <div class="me-desc">通过匹配具有相似背景特征的促销组与对照组，消除选择性偏差。本研究中ATT=+7.55K，p=0.033，结论显著，说明促销对于相似条件的门店确实有效。</div>
+    </div>
+    <div class="me-card">
+      <div class="me-name" style="color:var(--accent3)">📐 DiD（双重差分）</div>
+      <div class="me-desc">利用活动前后（时间）和处理/对照组（截面）两个维度的差值消除固定效应，估计量=+1.68K，p=0.48。方向与PSM一致但不显著，可能因分组异质性较大。</div>
+    </div>
+    <div class="me-card">
+      <div class="me-name" style="color:var(--accent4)">🚀 Uplift（提升模型）</div>
+      <div class="me-desc">T-Learner分别在处理组和对照组训练模型，预测每个用户的个体因果效应CATE。均值=73.2%，p&lt;0.001，说明促销对大多数用户确有显著的转化概率提升。</div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <span>数据来源：WA Marketing Campaign · UserBehavior_2025 · 日志行为数据</span>
+    <span>论文：电商促销活动效果评估与用户转化率预测模型评估系统 · 韩颜泽 · 2026</span>
+  </div>
+</div>
+
+<script>
+const API = 'http://localhost:5000/api';
+const C = {accent:'#4f8ef7',accent2:'#3ecf8e',accent3:'#f7c948',accent4:'#f87168',
+           muted:'#64748b',border:'#e2e8f0',text:'#1a2540'};
+const ROLE_LABEL = { admin:'管理员', analyst:'分析师', viewer:'访客' };
+
+fetch('/api/auth/status').then(r=>r.json()).then(res=>{
+  if(!res.data||!res.data.logged_in){location.href='/login';return;}
+  const {username,role}=res.data;
+  document.getElementById('topbar-user').textContent=`👤 ${username} · ${ROLE_LABEL[role]||role}`;
+});
+function logout(){fetch('/api/logout',{method:'POST'}).then(()=>location.href='/login');}
+
+async function apiFetch(url,fallback){
+  try{const res=await fetch(url,{signal:AbortSignal.timeout(5000)});
+    const json=await res.json();if(json.code===0)return json.data;return fallback;
+  }catch{return fallback;}
+}
+
+async function init(){
+  try{
+    const res=await fetch(`${API}/health`,{signal:AbortSignal.timeout(3000)});
+    const d=await res.json();
+    if(d.code===0){
+      document.getElementById('statusDot').className='status-dot ok';
+      document.getElementById('statusText').textContent=`后端已连接 · 模型${d.data.model_loaded?'已加载':'未加载'}`;
+    }
+  }catch{document.getElementById('statusDot').className='status-dot err';document.getElementById('statusText').textContent='后端未连接';}
+
+  const data=await apiFetch(`${API}/promo/ate`,{
+    methods:[
+      {name:'PSM',estimate:7.55,unit:'K$',p_value:0.033,significant:true,desc:''},
+      {name:'DiD',estimate:1.68,unit:'K$',p_value:0.48,significant:false,desc:''},
+      {name:'Uplift CATE',estimate:73.2,unit:'%',p_value:0.001,significant:true,desc:''},
+    ]
+  });
+
+  // ATE柱状图
+  const ateChart=echarts.init(document.getElementById('ateChart'), null);
+  ateChart.setOption({
+    backgroundColor:'transparent',
+    tooltip:{trigger:'axis',backgroundColor:'#fff',borderColor:'#e2e8f0',borderWidth:1,textStyle:{color:'#1a2540'},formatter:p=>{
+      const m=data.methods[p[0].dataIndex];
+      return `<b>${m.name}</b><br/>估计量：${m.estimate}${m.unit}<br/>p值：${m.p_value}<br/>${m.desc}`;
+    }},
+    grid:{left:45,right:20,top:20,bottom:50},
+    xAxis:{type:'category',data:data.methods.map(m=>m.name),
+      axisLabel:{color:C.muted,fontSize:12},axisLine:{lineStyle:{color:C.border}}},
+    yAxis:{type:'value',axisLabel:{color:C.muted},
+      splitLine:{lineStyle:{color:C.border,type:'dashed'}}},
+    series:[{type:'bar',barWidth:'50%',
+      data:data.methods.map((m,i)=>({
+        value:m.estimate,
+        itemStyle:{color:m.significant?C.accent2:'#555',borderRadius:[5,5,0,0]}
+      })),
+      label:{show:true,position:'top',color:C.text,fontSize:12,fontWeight:'bold',
+        formatter:p=>`${p.value}${data.methods[p.dataIndex].unit}\n${data.methods[p.dataIndex].significant?'✓ 显著':'ns'}`}
+    }]
+  });
+  window.addEventListener('resize',()=>ateChart.resize());
+
+  document.getElementById('psmInsight').textContent=`PSM ATT = +${data.methods[0]?.estimate}K/店/周 (p=${data.methods[0]?.p_value})`;
+
+  // 方法汇总表
+  const tbody=document.getElementById('methodTable').querySelector('tbody');
+  tbody.innerHTML=data.methods.map(m=>`
+    <tr>
+      <td>${m.name}</td>
+      <td style="color:${m.significant?C.accent2:C.text};font-weight:600">${m.estimate}${m.unit}</td>
+      <td>${m.p_value}</td>
+      <td><span class="sig-badge ${m.significant?'yes':'no'}">${m.significant?'** 显著':'不显著'}</span></td>
+    </tr>
+  `).join('');
+}
+
+init();
+</script>
+</body>
+</html>

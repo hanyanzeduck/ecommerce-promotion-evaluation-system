@@ -1,6 +1,6 @@
 # E-commerce Promotion Evaluation System
 
-毕业设计项目：一个以 Flask、Pandas、scikit-learn 和 XGBoost 构建的电商促销评估与用户行为分析系统。系统把转化预测、用户 RFM 分群、PSM、DiD 与 Uplift 分析集中在一个可交互的 Web 界面中。
+一个以 Flask、Pandas、scikit-learn 和 XGBoost 构建的电商促销评估与用户行为分析系统。系统把转化预测、用户 RFM 分群、PSM、DiD 与 Uplift 分析集中在一个可交互的 Web 界面中。
 
 ## 功能
 

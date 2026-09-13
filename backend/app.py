@@ -156,7 +156,7 @@ def load_csv(key, required=True):
                 f'请将文件放入 {os.path.join(BASE, "data")} 文件夹后重新启动'
             )
         return pd.DataFrame()
-    print(f'  ✓ {os.path.basename(path)}')
+    print(f'  [OK] {os.path.basename(path)}')
     return pd.read_csv(path)
 
 df_wa      = load_csv('wa')
@@ -171,7 +171,7 @@ model_path = DATA.get('model')
 
 print('\n正在加载模型...')
 if not model_path:
-    print('  ✗ 模型文件未找到')
+    print('  [ERROR] 模型文件未找到')
     print(f'    搜索文件名: xgb_ub_model.pkl')
     print(f'    搜索目录:   {os.path.join(BASE, "data")}')
     print('    → 请将 xgb_ub_model.pkl 放入 data/ 文件夹后重启')
@@ -181,17 +181,17 @@ else:
         import xgboost
         print(f'  xgboost 版本: {xgboost.__version__}')
     except ImportError:
-        print('  ✗ xgboost 未安装！请运行: pip install xgboost  然后重启')
+        print('  [ERROR] xgboost 未安装！请运行: pip install xgboost  然后重启')
     else:
         try:
             model = joblib.load(model_path)
-            print(f'  ✓ 模型加载成功: {type(model).__name__}，特征数={model.n_features_in_}')
+            print(f'  [OK] 模型加载成功: {type(model).__name__}，特征数={model.n_features_in_}')
         except Exception as e:
-            print(f'  ✗ 模型加载失败: {e}')
+            print(f'  [ERROR] 模型加载失败: {e}')
             print('    可能原因：训练时的 xgboost 版本与当前版本不一致')
             print('    解决方案：pip install xgboost==2.0.3  然后重启')
 
-print('\n数据加载完成 ✓')
+print('\n数据加载完成 [OK]')
 print('='*50)
 
 # ── 工具函数 ──────────────────────────────────────────────
